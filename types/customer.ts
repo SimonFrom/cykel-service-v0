@@ -7,6 +7,6 @@ export type Customer = {
     email: string
     phoneNumber: string
     club?: string
-    note?: string[]
+    note?: string
     bikes?: Bike[]
 }

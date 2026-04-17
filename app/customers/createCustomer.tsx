@@ -43,9 +43,6 @@ export default function CreateCustomer() {
       <View className="flex-1 items-center justify-center gap-8 p-4">
         <Image source={LOGO[colorScheme ?? 'light']} style={IMAGE_STYLE} resizeMode="contain" />
         <View className="gap-2 p-4">
-          <Text className="ios:text-foreground heading font-mono text-muted-foreground">
-            {SCREEN_OPTIONS.title}
-          </Text>
           <CreateCustomerForm
             onSuccess={() => {
               router.push('/customers');

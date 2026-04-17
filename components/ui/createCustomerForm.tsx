@@ -54,7 +54,6 @@ export function CreateCustomerForm({ onSuccess }: { onSuccess?: () => void }) {
           render={({ field: { onChange, onBlur, value } }) => (
             <Input
               id="firstName"
-              placeholder="Simon"
               onBlur={onBlur}
               onChangeText={onChange}
               value={value}
@@ -75,7 +74,6 @@ export function CreateCustomerForm({ onSuccess }: { onSuccess?: () => void }) {
           render={({ field: { onChange, onBlur, value } }) => (
             <Input
               id="lastName"
-              placeholder="From"
               onBlur={onBlur}
               onChangeText={onChange}
               value={value}
@@ -92,17 +90,17 @@ export function CreateCustomerForm({ onSuccess }: { onSuccess?: () => void }) {
         <Controller
           control={control}
           name="email"
-          rules={{
-            required: 'Email er påkrævet',
-            pattern: {
-              value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-              message: 'Ugyldig email',
-            },
-          }}
+          // Rules for email pattern
+          // rules={{
+          //   required: 'Email er påkrævet',
+          //   pattern: {
+          //     value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+          //     message: 'Ugyldig email',
+          //   },
+          // }}
           render={({ field: { onChange, onBlur, value } }) => (
             <Input
               id="email"
-              placeholder="simon@example.com"
               keyboardType="email-address"
               autoCapitalize="none"
               onBlur={onBlur}
@@ -121,11 +119,10 @@ export function CreateCustomerForm({ onSuccess }: { onSuccess?: () => void }) {
         <Controller
           control={control}
           name="phoneNumber"
-          rules={{ required: 'Telefonnummer er påkrævet' }}
+          // rules={{ required: 'Telefonnummer er påkrævet' }}
           render={({ field: { onChange, onBlur, value } }) => (
             <Input
               id="phoneNumber"
-              placeholder="20875552"
               keyboardType="phone-pad"
               onBlur={onBlur}
               onChangeText={onChange}
@@ -146,7 +143,6 @@ export function CreateCustomerForm({ onSuccess }: { onSuccess?: () => void }) {
           render={({ field: { onChange, onBlur, value } }) => (
             <Input
               id="club"
-              placeholder="Klub navn"
               onBlur={onBlur}
               onChangeText={onChange}
               value={value}
