@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useCustomerStore } from '@/store/customerStore';
 import { updateCustomer} from '@/crud/customers';
 import { Customer } from '@/types/customer';
+import { router } from 'expo-router';
 
 type FormData = Customer;
 
@@ -30,6 +31,7 @@ export default function CustomerScreen({ onSuccess }: { onSuccess?: () => void }
     try {
       await updateCustomer(data.id, data);
       reset();
+      router.back();
       onSuccess?.();
     } catch (e) {
       console.error(e);
