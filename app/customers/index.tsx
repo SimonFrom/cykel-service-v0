@@ -30,13 +30,14 @@ const IMAGE_STYLE: ImageStyle = {
 export default function Screen() {
   const { colorScheme } = useColorScheme();
 
-  const [customers, setCustomers] = useState<Customer[]>([]);
+  const customers = useCustomerStore(s => s.customers);
   const fetchCustomers = async () => {
     const customers = await getCustomers();
-    setCustomers(customers);
+    setCustomersInStore(customers);
   };
 
   const setSelectedCustomer = useCustomerStore(s => s.setSelectedCustomer);
+  const setCustomersInStore = useCustomerStore(s => s.setCustomersInStore);
   const handlePress = (customer: Customer) => {
     setSelectedCustomer(customer);
     router.push({

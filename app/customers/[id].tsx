@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
 import { Textarea } from '@/components/ui/textarea';
 import { useCustomerStore } from '@/store/customerStore';
-import { updateCustomer} from '@/crud/customers';
+import { updateCustomer } from '@/crud/customers';
 import { Customer } from '@/types/customer';
 import { router } from 'expo-router';
 
@@ -14,6 +14,7 @@ type FormData = Customer;
 
 export default function CustomerScreen({ onSuccess }: { onSuccess?: () => void }) {
   const customer = useCustomerStore((s) => s.selectedCustomer);
+  const updateCustomerInStore = useCustomerStore((s) => s.updateCustomerInStore);
 
   const { control, handleSubmit, reset } = useForm<FormData>({
     defaultValues: {
@@ -30,6 +31,7 @@ export default function CustomerScreen({ onSuccess }: { onSuccess?: () => void }
   const onSubmit = async (data: FormData) => {
     try {
       await updateCustomer(data.id, data);
+      updateCustomerInStore(data);
       reset();
       router.back();
       onSuccess?.();

@@ -5,12 +5,17 @@ type CustomerStore = {
   customers: Customer[];
   selectedCustomer: Customer | null;
   setSelectedCustomer: (customer: Customer) => void;
-  setCustomers: (customers: Customer[]) => void;
+  setCustomersInStore: (customers: Customer[]) => void;
+  updateCustomerInStore: (customer: Customer) => void;
 };
 
 export const useCustomerStore = create<CustomerStore>((set) => ({
   customers: [],
   selectedCustomer: null,
   setSelectedCustomer: (customer) => set({selectedCustomer: customer}),
-  setCustomers: (customers) => set({customers}),
+  setCustomersInStore: (customers) => set({customers}),
+  updateCustomerInStore: (updated) => set((state) => ({
+    selectedCustomer: updated,
+    customers: state.customers.map((c) => c.id === updated.id ? updated : c),
+  })),
 }));
