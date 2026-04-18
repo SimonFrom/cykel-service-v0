@@ -9,6 +9,7 @@ import { Image, type ImageStyle, View, StyleSheet, FlatList } from 'react-native
 import { Customer } from '@/types/customer';
 import { useCallback, useEffect, useState } from 'react';
 import { getCustomers, deleteCustomer } from '@/crud/customers';
+import { getBikes } from '@/crud/bikes';
 import { useCustomerStore } from '@/store/customerStore';
 
 const LOGO = {

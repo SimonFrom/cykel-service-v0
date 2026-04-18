@@ -6,9 +6,14 @@ import { Button } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
 import { Textarea } from '@/components/ui/textarea';
 import { useCustomerStore } from '@/store/customerStore';
-import { updateCustomer } from '@/crud/customers';
+import { getCustomers, updateCustomer } from '@/crud/customers';
+import { getBikes } from '@/crud/bikes';
 import { Customer } from '@/types/customer';
-import { router } from 'expo-router';
+import { Link, router } from 'expo-router';
+import { useEffect } from 'react';
+import * as React from 'react';
+import { Bike } from '@/types/bike';
+
 
 type FormData = Customer;
 
@@ -27,6 +32,16 @@ export default function CustomerScreen({ onSuccess }: { onSuccess?: () => void }
       note: customer?.note ?? '',
     },
   });
+
+  const fetchBikes = async () => {
+    const bikes = await getBikes(customer?.id ?? 0);
+  };
+
+  const [bikes, setBikes] = React.useState<Bike[]>([]);
+
+  useEffect(() => {
+    fetchBikes()
+  }, [])
 
   const onSubmit = async (data: FormData) => {
     try {
@@ -112,14 +127,26 @@ export default function CustomerScreen({ onSuccess }: { onSuccess?: () => void }
             />
           </View>
 
+
           <Button className="w-3/12" onPress={handleSubmit(onSubmit)}>
             <Text>Gem</Text>
           </Button>
         </View>
 
+
         <View style={{ flex: 1, gap: 16, padding: 16 }}>
           <Text>Reparationer:</Text>
         </View>
+      </View>
+      <View>
+        <Text>Cykler:</Text>
+        <Link href={{
+          pathname: "/customers/createBike",
+          params: { bikeId: bikes.length + 1, customerId: customer.id } }} push asChild>
+        <Button className="mr-5 w-28">
+          <Text>Opret cykel</Text>
+        </Button>
+      </Link>
       </View>
     </ScrollView>
   );

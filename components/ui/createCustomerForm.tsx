@@ -1,4 +1,3 @@
-// components/CreateCustomerForm.tsx
 import { useState } from 'react';
 import { View, ScrollView, StyleSheet } from 'react-native';
 import { useForm, Controller } from 'react-hook-form';
