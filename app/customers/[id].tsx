@@ -20,6 +20,7 @@ type FormData = Customer;
 export default function CustomerScreen({ onSuccess }: { onSuccess?: () => void }) {
   const customer = useCustomerStore((s) => s.selectedCustomer);
   const updateCustomerInStore = useCustomerStore((s) => s.updateCustomerInStore);
+  const setCustomer = useCustomerStore((s) => s.updateCustomerInStore);
 
   const { control, handleSubmit, reset } = useForm<FormData>({
     defaultValues: {
@@ -141,9 +142,8 @@ export default function CustomerScreen({ onSuccess }: { onSuccess?: () => void }
       <View>
         <Text>Cykler:</Text>
         <Link href={{
-          pathname: "/customers/createBike",
-          params: { bikeId: bikes.length + 1, customerId: customer.id } }} push asChild>
-        <Button className="mr-5 w-28">
+          pathname: "/customers/createBike"}} push asChild>
+        <Button className="mr-5 w-28" onPress={() => setCustomer(customer)}>
           <Text>Opret cykel</Text>
         </Button>
       </Link>

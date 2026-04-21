@@ -19,15 +19,15 @@ export const deleteBike = async (id: number): Promise<void> => {
 
 export const createBike = async (bike: Bike) => {
   const { error } = await supabase.from('bikes').insert({
-    id: bike.id,
     customer_id: bike.customerId,
-    customer: bike.customer,
     make: bike.make,
     model: bike.model,
     colour: bike.colour,
     type: bike.type,
-    repairs: bike.repairs,
   });
 
-  if (error) throw error;
+  if (error) {
+    console.error('createBike error:', JSON.stringify(error, null, 2));
+    throw error;
+  }
 };

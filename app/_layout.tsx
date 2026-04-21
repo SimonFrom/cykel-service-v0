@@ -20,9 +20,10 @@ export default function RootLayout() {
   return (
     <ThemeProvider value={NAV_THEME[colorScheme ?? 'light']}>
       <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
-      <Tabs screenOptions={{
-        tabBarActiveTintColor: "orange",
-      }}>
+      <Tabs
+        screenOptions={{
+          tabBarActiveTintColor: 'hsl(160 60% 45%)',
+        }}>
         <Tabs.Screen
           name="index"
           options={{

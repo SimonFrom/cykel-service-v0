@@ -37,7 +37,7 @@ export default function CreateBike() {
         <Button
           className="mr-5 mt-16"
           variant="destructive"
-          onPress={() => router.back()}>
+          onPress={() => router.push('/customers')}>
           <Text>Tilbage</Text>
         </Button>
       </View>
@@ -46,7 +46,7 @@ export default function CreateBike() {
         <View className="gap-2 p-4">
           <CreateBikeForm
             onSuccess={() => {
-              // router.push('/customers');
+              router.push('/customers');
             }}
           />
         </View>

@@ -1,22 +1,44 @@
 import { Controller, useForm } from 'react-hook-form';
-import { Bike, bikeTypes } from '@/types/bike';
+import { Bike, BikeTypes, bikeTypes } from '@/types/bike';
 import { createBike } from '@/crud/bikes';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Text } from '@/components/ui/text';
-import { useLocalSearchParams } from 'expo-router';
+import { useCustomerStore } from '@/store/customerStore';
+import { TriggerRef } from '@rn-primitives/select';
+import { useRef } from 'react';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+
 
 
 
 type FormData = Bike;
 
 export function CreateBikeForm({ onSuccess }: { onSuccess?: () => void }) {
-  // TODO
 
-  let bikeId = "";
-  bikeId = useLocalSearchParams(bikeId);
-  const customerId = useLocalSearchParams(customerId);
+  const customerId = useCustomerStore((s) => s.selectedCustomer?.id)
+  const customer = useCustomerStore((s) => s.selectedCustomer);
+
+  // Select props
+  const ref = useRef<TriggerRef>(null);
+  const insets = useSafeAreaInsets();
+  const contentInsets = {
+    top: insets.top,
+    bottom: Platform.select({ ios: insets.bottom, android: insets.bottom + 24 }),
+    left: 12,
+    right: 12,
+  };
 
   const {
     control,
@@ -25,67 +47,120 @@ export function CreateBikeForm({ onSuccess }: { onSuccess?: () => void }) {
     formState: { errors },
   } = useForm<FormData>({
     defaultValues: {
-      id: parseInt(bikeId),
-      customerId: 0,
       make: '',
       model: '',
       colour: '',
-      type: bikeTypes.city
     },
   });
 
   const onSubmit = async (data: FormData) => {
+    console.log('onSubmit called', { customerId, data });
+    if (!customerId) {
+      console.log('early return: no customerId');
+      return;
+    }
     try {
-      
+      data.customerId = customerId;
+      console.log('inserting bike:', data);
       await createBike(data);
       reset();
       onSuccess?.();
     } catch (e) {
-      console.error(e);
-    } finally {
+      console.error('onSubmit error:', JSON.stringify(e, null, 2));
     }
   };
 
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      {/* ID */}
+      {/* Make */}
       <View style={styles.field}>
-        <Label nativeID="id">ID</Label>
+        <Label nativeID="make">Mærke</Label>
         <Controller
           control={control}
-          name="id"
+          name="make"
           render={({ field: { onChange, onBlur, value } }) => (
             <Input
-              id="id"
+              id="make"
               onBlur={onBlur}
               onChangeText={onChange}
-              value={String(value)}
-              aria-labelledby="id"
+              value={value}
+              aria-labelledby="make"
             />
           )}
         />
-        {errors.id && <Text style={styles.error}>{errors.id.message}</Text>}
+        {errors.make && <Text style={styles.error}>{errors.make.message}</Text>}
       </View>
 
-      {/* Customer ID */}
+      {/* Model */}
       <View style={styles.field}>
-        <Label nativeID="customerId">Kunde ID</Label>
+        <Label nativeID="model">Model</Label>
         <Controller
           control={control}
-          name="customerId"
+          name="model"
           render={({ field: { onChange, onBlur, value } }) => (
             <Input
-              id="customerId"
+              id="model"
               onBlur={onBlur}
               onChangeText={onChange}
-              value={String(value)}
-              aria-labelledby="customerId"
+              value={value}
+              aria-labelledby="model"
             />
           )}
         />
-        {errors.customerId && <Text style={styles.error}>{errors.customerId.message}</Text>}
+        {errors.model && <Text style={styles.error}>{errors.model.message}</Text>}
       </View>
+
+      {/* Colour */}
+      <View style={styles.field}>
+        <Label nativeID="colour">Farve</Label>
+        <Controller
+          control={control}
+          name="colour"
+          render={({ field: { onChange, onBlur, value } }) => (
+            <Input
+              id="colour"
+              onBlur={onBlur}
+              onChangeText={onChange}
+              value={value}
+              aria-labelledby="colour"
+            />
+          )}
+        />
+        {errors.colour && <Text style={styles.error}>{errors.colour.message}</Text>}
+      </View>
+
+      {/* Type */}
+      <View style={styles.field}>
+        <Label nativeID="type">Type</Label>
+        <Controller
+          control={control}
+          name="type"
+          render={({ field: { onChange, value } }) => (
+            <Select
+              value={{ value, label: bikeTypes.find((t) => t.value === value)?.label ?? '' }}
+              onValueChange={(option) => onChange(option?.value)}>
+              <SelectTrigger ref={ref} className="w-[180px]">
+                <SelectValue placeholder="Vælg en cykel type" />
+              </SelectTrigger>
+              <SelectContent insets={contentInsets} className="w-[180px]">
+                <SelectGroup>
+                  <SelectLabel>Cykel typer</SelectLabel>
+                  {bikeTypes.map((bikeType) => (
+                    <SelectItem key={bikeType.value} label={bikeType.label} value={bikeType.value}>
+                      {bikeType.label}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          )}
+        />
+        {errors.type && <Text style={styles.error}>{errors.type.message}</Text>}
+      </View>
+      <Button style={{ backgroundColor: 'hsl(160 60% 45%)' }} onPress={handleSubmit(onSubmit)}>
+        <Text>Gem</Text>
+      </Button>
     </ScrollView>
   );
 }
