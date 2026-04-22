@@ -41,7 +41,7 @@ export default function CreateBike() {
           variant="destructive"
           onPress={() =>
             router.push({
-              pathname: '/customers/[id]',
+              pathname: '/customers/[id]' as any,
               params: { id: String(customer?.id) },
             })
           }>
@@ -54,7 +54,7 @@ export default function CreateBike() {
           <CreateBikeForm
             onSuccess={() => {
               router.push({
-                pathname: '/customers/[id]',
+                pathname: 'customers/[id]' as any,
                 params: { id: String(customer?.id) },
               });
             }}
