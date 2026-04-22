@@ -8,6 +8,7 @@ import * as React from 'react';
 import { Image, type ImageStyle, View } from 'react-native';
 import { CreateCustomerForm } from '@/components/ui/createCustomerForm';
 import { CreateBikeForm } from '@/components/ui/createBikeForm';
+import {useCustomerStore} from '@/store/customerStore';
 
 const LOGO = {
   light: require('@/assets/images/react-native-reusables-light.png'),
@@ -29,6 +30,7 @@ const router = useRouter();
 
 export default function CreateBike() {
   const { colorScheme } = useColorScheme();
+  const customer = useCustomerStore((s) => s.selectedCustomer);
 
   return (
     <>
@@ -37,7 +39,12 @@ export default function CreateBike() {
         <Button
           className="mr-5 mt-16"
           variant="destructive"
-          onPress={() => router.push('/customers')}>
+          onPress={() =>
+            router.push({
+              pathname: '/customers/[id]',
+              params: { id: String(customer?.id) },
+            })
+          }>
           <Text>Tilbage</Text>
         </Button>
       </View>
@@ -46,7 +53,10 @@ export default function CreateBike() {
         <View className="gap-2 p-4">
           <CreateBikeForm
             onSuccess={() => {
-              router.push('/customers');
+              router.push({
+                pathname: '/customers/[id]',
+                params: { id: String(customer?.id) },
+              });
             }}
           />
         </View>

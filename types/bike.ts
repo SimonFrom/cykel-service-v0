@@ -2,7 +2,7 @@ import {Repair} from "@/types/repair";
 import {Customer} from "@/types/customer";
 
 export type Bike = {
-  id?: number;
+  id: number;
   customerId: number;
   make: string;
   model: string;

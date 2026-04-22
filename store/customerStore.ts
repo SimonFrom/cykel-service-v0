@@ -7,6 +7,7 @@ type CustomerStore = {
   setSelectedCustomer: (customer: Customer) => void;
   setCustomersInStore: (customers: Customer[]) => void;
   updateCustomerInStore: (customer: Customer) => void;
+  deleteCustomerInStore: (id: number) => void;
 };
 
 export const useCustomerStore = create<CustomerStore>((set) => ({
@@ -18,4 +19,7 @@ export const useCustomerStore = create<CustomerStore>((set) => ({
     selectedCustomer: updated,
     customers: state.customers.map((c) => c.id === updated.id ? updated : c),
   })),
-}));
+  deleteCustomerInStore: (id) => set((state) => ({
+    customers: state.customers.filter((c) => c.id.toString() !== id.toString()),
+  })),
+}))

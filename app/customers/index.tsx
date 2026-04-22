@@ -1,15 +1,14 @@
 import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
-import { Link, router, Stack } from 'expo-router';
+import { Link, router, Stack, useFocusEffect } from 'expo-router';
 import { MoonStarIcon, SunIcon } from 'lucide-react-native';
 import {useColorScheme } from 'nativewind';
 import * as React from 'react';
 import { Image, type ImageStyle, View, StyleSheet, FlatList } from 'react-native';
 import { Customer } from '@/types/customer';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback } from 'react';
 import { getCustomers, deleteCustomer } from '@/crud/customers';
-import { getBikes } from '@/crud/bikes';
 import { useCustomerStore } from '@/store/customerStore';
 
 const LOGO = {
@@ -39,6 +38,7 @@ export default function Screen() {
 
   const setSelectedCustomer = useCustomerStore(s => s.setSelectedCustomer);
   const setCustomersInStore = useCustomerStore(s => s.setCustomersInStore);
+  const deleteCustomerInStore = useCustomerStore(s => s.deleteCustomerInStore);
   const handlePress = (customer: Customer) => {
     setSelectedCustomer(customer);
     router.push({
@@ -47,9 +47,11 @@ export default function Screen() {
     });
   }
 
-  useEffect(() => {
-    fetchCustomers();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      fetchCustomers();
+    }, [])
+  );
 
   return (
     <>
@@ -90,9 +92,9 @@ export default function Screen() {
                 </Button>
                 <Button
                   variant="destructive"
-                  onPress={() => {
-                    deleteCustomer(item.id)
-                    fetchCustomers()
+                  onPress={async () => {
+                    await deleteCustomer(item.id);
+                    deleteCustomerInStore(item.id);
                   }}>
                   <Text>Slet</Text>
                 </Button>

@@ -7,18 +7,20 @@ import { Button } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
 import { createCustomer } from '@/crud/customers';
 import { Customer } from '@/types/customer';
+import { useCustomerStore} from '@/store/customerStore';
 
 type FormData = Omit<Customer, 'id'>;
 
 export function CreateCustomerForm({ onSuccess }: { onSuccess?: () => void }) {
   const [isLoading, setIsLoading] = useState(false);
+  const updateCustomerInStore = useCustomerStore((s) => s.updateCustomerInStore);
 
   const {
     control,
     handleSubmit,
     reset,
     formState: { errors },
-  } = useForm<FormData>({
+  } = useForm<Customer>({
     defaultValues: {
       firstName: '',
       lastName: '',
@@ -28,15 +30,17 @@ export function CreateCustomerForm({ onSuccess }: { onSuccess?: () => void }) {
     },
   });
 
-  const onSubmit = async (data: FormData) => {
+  const onSubmit = async (data: Customer) => {
     try {
       setIsLoading(true);
       await createCustomer(data);
+      updateCustomerInStore(data);
       reset();
       onSuccess?.();
     } catch (e) {
       console.error(e);
     } finally {
+
       setIsLoading(false);
     }
   };

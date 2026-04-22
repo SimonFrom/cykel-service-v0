@@ -7,6 +7,8 @@ import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import { Image, type ImageStyle, View } from 'react-native';
 import { CreateCustomerForm } from '@/components/ui/createCustomerForm';
+import { useCustomerStore} from '@/store/customerStore';
+
 
 const LOGO = {
   light: require('@/assets/images/react-native-reusables-light.png'),
@@ -28,6 +30,9 @@ const router = useRouter();
 
 export default function CreateCustomer() {
   const { colorScheme } = useColorScheme();
+  const customer = useCustomerStore((s) => s.selectedCustomer);
+
+
 
   return (
     <>
@@ -45,7 +50,10 @@ export default function CreateCustomer() {
         <View className="gap-2 p-4">
           <CreateCustomerForm
             onSuccess={() => {
-              router.push('/customers');
+              router.push({
+                pathname: '/customers/[id]',
+                params: { id: String(customer?.id) },
+              });
             }}
           />
         </View>
