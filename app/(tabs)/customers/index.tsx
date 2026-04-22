@@ -42,7 +42,7 @@ export default function Screen() {
   const handlePress = (customer: Customer) => {
     setSelectedCustomer(customer);
     router.push({
-      pathname: '/customers/[id]',
+      pathname: '/(tabs)/customers/[id]' as any,
       params: { id: customer.id },
     });
   }
@@ -57,11 +57,9 @@ export default function Screen() {
     <>
       <Stack.Screen options={SCREEN_OPTIONS} />
       <View className="items-end justify-end">
-        <Link href="/customers/createCustomer" push asChild>
-          <Button className="mr-5 mt-16">
-            <Text>Opret kunde</Text>
-          </Button>
-        </Link>
+        <Button className="mr-5 mt-16" onPress={() => router.push('/createCustomerModal' as any)}>
+          <Text>Opret kunde</Text>
+        </Button>
       </View>
       <View className="flex-1 items-center justify-center gap-8 p-4">
         <Image source={LOGO[colorScheme ?? 'light']} style={IMAGE_STYLE} resizeMode="contain" />
@@ -86,8 +84,7 @@ export default function Screen() {
                   <Text style={styles.email}>{item.email}</Text>
                 </View>
                 <Text style={styles.phone}>{item.phoneNumber}</Text>
-                <Button
-                  onPress={() => handlePress(item)}>
+                <Button onPress={() => handlePress(item)}>
                   <Text>Vis</Text>
                 </Button>
                 <Button
