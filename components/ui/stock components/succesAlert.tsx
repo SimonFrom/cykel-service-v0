@@ -1,4 +1,4 @@
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/stock components/alert';
 import { CheckCircle2Icon } from 'lucide-react-native';
 
 export function Success() {

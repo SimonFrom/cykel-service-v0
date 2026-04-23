@@ -14,8 +14,15 @@ export default function RootLayout() {
         <Stack.Screen name="(tabs)" options={{headerShown: false}} />
         <Stack.Screen name="createCustomerModal"
                       options={{
-                        presentation: "formSheet",
+                        presentation: "transparentModal",
+                        animation: "fade_from_bottom",
                         title: "Opret kunde"}} />
+        <Stack.Screen name="createBikeModal"
+                      options={{
+                        presentation: "transparentModal",
+                        animation: 'fade',
+                        title: "Opret Cykel",
+                      }} />
       </Stack>
     </React.Fragment>
   );

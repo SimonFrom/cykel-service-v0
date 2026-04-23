@@ -1,6 +1,6 @@
-import { Button } from '@/components/ui/button';
-import { Icon } from '@/components/ui/icon';
-import { Text } from '@/components/ui/text';
+import { Button } from '@/components/ui/stock components/button';
+import { Icon } from '@/components/ui/stock components/icon';
+import { Text } from '@/components/ui/stock components/text';
 import { Link, router, Stack, useFocusEffect } from 'expo-router';
 import { MoonStarIcon, SunIcon } from 'lucide-react-native';
 import {useColorScheme } from 'nativewind';
@@ -10,6 +10,7 @@ import { Customer } from '@/types/customer';
 import { useCallback } from 'react';
 import { getCustomers, deleteCustomer } from '@/crud/customers';
 import { useCustomerStore } from '@/store/customerStore';
+import { DeleteConfirmationDialog } from '@/components/ui/deleteConfirmation';
 
 const LOGO = {
   light: require('@/assets/images/react-native-reusables-light.png'),
@@ -45,6 +46,11 @@ export default function Screen() {
       pathname: '/(tabs)/customers/[id]' as any,
       params: { id: customer.id },
     });
+  }
+
+  const handleDelete = async (id: number) => {
+    await deleteCustomer(id);
+    deleteCustomerInStore(id);
   }
 
   useFocusEffect(
@@ -87,14 +93,12 @@ export default function Screen() {
                 <Button onPress={() => handlePress(item)}>
                   <Text>Vis</Text>
                 </Button>
-                <Button
-                  variant="destructive"
-                  onPress={async () => {
-                    await deleteCustomer(item.id);
-                    deleteCustomerInStore(item.id);
-                  }}>
-                  <Text>Slet</Text>
-                </Button>
+                <DeleteConfirmationDialog
+                  title={"Er du sikker?"}
+                  buttonTitle={"Slet kunde"}
+                  content={`Vil du virkelig slette ${item.firstName} ${item.lastName}`}
+                  onConfirm={() => handleDelete(item.id)}
+                />
               </View>
             )}
           />

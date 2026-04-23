@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { View, ScrollView, StyleSheet } from 'react-native';
 import { useForm, Controller } from 'react-hook-form';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
-import { Text } from '@/components/ui/text';
+import { Input } from '@/components/ui/stock components/input';
+import { Label } from '@/components/ui/stock components/label';
+import { Button } from '@/components/ui/stock components/button';
+import { Text } from '@/components/ui/stock components/text';
 import { createCustomer } from '@/crud/customers';
 import { Customer } from '@/types/customer';
 import { useCustomerStore } from '@/store/customerStore';

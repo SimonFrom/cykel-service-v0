@@ -1,20 +1,21 @@
 import { View, ScrollView, StyleSheet, FlatList } from 'react-native';
 import { useForm, Controller } from 'react-hook-form';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
-import { Text } from '@/components/ui/text';
-import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/stock components/input';
+import { Label } from '@/components/ui/stock components/label';
+import { Button } from '@/components/ui/stock components/button';
+import { Text } from '@/components/ui/stock components/text';
+import { Textarea } from '@/components/ui/stock components/textarea';
 import { useCustomerStore } from '@/store/customerStore';
-import { getCustomers, updateCustomer } from '@/crud/customers';
+import { updateCustomer } from '@/crud/customers';
 import { deleteBike, getBikes } from '@/crud/bikes';
 import { Customer } from '@/types/customer';
-import { Link, router, useFocusEffect } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect } from 'react';
 import * as React from 'react';
 import { useBikeStore } from '@/store/bikeStore';
 import Animated, { LinearTransition } from 'react-native-reanimated';
 import { bikeTypes } from '@/types/bike';
+import { DeleteConfirmationDialog } from '@/components/ui/deleteConfirmation';
 
 type FormData = Customer;
 
@@ -61,6 +62,11 @@ export default function CustomerScreen({ onSuccess }: { onSuccess?: () => void }
       console.error(e);
     }
   };
+
+  const handleDelete = async (id: number) => {
+    await deleteBike(id);
+    deleteBikeInStore(id);
+  }
 
   if (!customer) return null;
 
@@ -144,16 +150,9 @@ export default function CustomerScreen({ onSuccess }: { onSuccess?: () => void }
         </View>
       </View>
       <View>
-        <Link
-          href={{
-            pathname: '/customers/createBike',
-          }}
-          push
-          asChild>
-          <Button className="mr-5 w-28" onPress={() => setCustomer(customer)}>
-            <Text>Opret cykel</Text>
-          </Button>
-        </Link>
+        <Button className="mr-5 w-28" onPress={() => router.push('/createBikeModal' as any)}>
+          <Text>Opret cykel</Text>
+        </Button>
         {/*TODO View for list with height*/}
         <Animated.FlatList
           data={bikes}
@@ -177,14 +176,12 @@ export default function CustomerScreen({ onSuccess }: { onSuccess?: () => void }
               <Button>
                 <Text>Vis</Text>
               </Button>
-              <Button
-                variant={'destructive'}
-                onPress={async () => {
-                  await deleteBike(item.id);
-                  deleteBikeInStore(item.id);
-                }}>
-                <Text>Slet</Text>
-              </Button>
+              <DeleteConfirmationDialog
+                title={"Er du sikker?"}
+                buttonTitle={"Slet"}
+                content={`Vil du virkelig slette ${item.make} ${item.model}?`}
+                onConfirm={() => handleDelete(item.id)}
+              />
             </View>
           )}
         />

@@ -1,10 +1,10 @@
 import { Controller, useForm } from 'react-hook-form';
-import { Bike, BikeTypes, bikeTypes } from '@/types/bike';
+import { Bike, bikeTypes } from '@/types/bike';
 import { createBike } from '@/crud/bikes';
 import { Platform, ScrollView, StyleSheet, View } from 'react-native';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Text } from '@/components/ui/text';
+import { Label } from '@/components/ui/stock components/label';
+import { Input } from '@/components/ui/stock components/input';
+import { Text } from '@/components/ui/stock components/text';
 import { useCustomerStore } from '@/store/customerStore';
 import { TriggerRef } from '@rn-primitives/select';
 import { useRef } from 'react';
@@ -17,8 +17,8 @@ import {
   SelectLabel,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Button } from '@/components/ui/button';
+} from '@/components/ui/stock components/select';
+import { Button } from '@/components/ui/stock components/button';
 
 
 
