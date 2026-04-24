@@ -1,6 +1,6 @@
 import { Controller, useForm } from 'react-hook-form';
 import { Bike, bikeTypes } from '@/types/bike';
-import { createBike } from '@/crud/bikes';
+import { createBike, updateBike } from '@/crud/bikes';
 import { Platform, ScrollView, StyleSheet, View } from 'react-native';
 import { Label } from '@/components/ui/stock components/label';
 import { Input } from '@/components/ui/stock components/input';
@@ -25,7 +25,7 @@ import { Button } from '@/components/ui/stock components/button';
 
 type FormData = Bike;
 
-export function CreateBikeForm({ onSuccess }: { onSuccess?: () => void }) {
+export function CreateBikeForm({ onSuccess, bike }: { onSuccess?: () => void; bike?: Bike }) {
 
   const customerId = useCustomerStore((s) => s.selectedCustomer?.id)
   const customer = useCustomerStore((s) => s.selectedCustomer);
@@ -40,6 +40,7 @@ export function CreateBikeForm({ onSuccess }: { onSuccess?: () => void }) {
     right: 12,
   };
 
+
   const {
     control,
     handleSubmit,
@@ -47,9 +48,10 @@ export function CreateBikeForm({ onSuccess }: { onSuccess?: () => void }) {
     formState: { errors },
   } = useForm<FormData>({
     defaultValues: {
-      make: '',
-      model: '',
-      colour: '',
+      make: bike?.make ?? '',
+      model: bike?.model ?? '',
+      colour: bike?.colour ?? '',
+      type: bike?.type ?? 'city',
     },
   });
 
@@ -60,9 +62,12 @@ export function CreateBikeForm({ onSuccess }: { onSuccess?: () => void }) {
       return;
     }
     try {
-      data.customerId = customerId;
-      console.log('inserting bike:', data);
-      await createBike(data);
+      if (bike) {
+        data.customerId = customerId;
+        await createBike(data);
+      } else {
+        await updateBike(data);
+      }
       reset();
       onSuccess?.();
     } catch (e) {

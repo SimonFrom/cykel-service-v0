@@ -31,3 +31,18 @@ export const createBike = async (bike: Bike) => {
     throw error;
   }
 };
+
+export const updateBike = async (bike: Bike) => {
+  const { error } = await supabase
+    .from('bikes')
+    .update({
+      customer_id: bike.customerId,
+      make: bike.make,
+      model: bike.model,
+      colour: bike.colour,
+      type: bike.type,
+  }).eq('id', bike.id);
+  if (error) {
+    console.error('updateBike error:', JSON.stringify(error, null, 2));
+  }
+}

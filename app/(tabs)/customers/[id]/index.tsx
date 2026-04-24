@@ -14,7 +14,7 @@ import { useCallback, useEffect } from 'react';
 import * as React from 'react';
 import { useBikeStore } from '@/store/bikeStore';
 import Animated, { LinearTransition } from 'react-native-reanimated';
-import { bikeTypes } from '@/types/bike';
+import { Bike, bikeTypes } from '@/types/bike';
 import { DeleteConfirmationDialog } from '@/components/ui/deleteConfirmation';
 
 type FormData = Customer;
@@ -27,6 +27,7 @@ export default function CustomerScreen({ onSuccess }: { onSuccess?: () => void }
   const bikes = useBikeStore((s) => s.bikes);
   const setBikesInStore = useBikeStore((s) => s.setBikesInStore);
   const deleteBikeInStore = useBikeStore((s) => s.deleteBike);
+  const updateBikeInStore = useBikeStore((s) => s.updateBikeInStore);
 
   const { control, handleSubmit, reset } = useForm<FormData>({
     defaultValues: {
@@ -68,7 +69,15 @@ export default function CustomerScreen({ onSuccess }: { onSuccess?: () => void }
     deleteBikeInStore(id);
   }
 
-  if (!customer) return null;
+  const handleShowBike = async (bike: Bike) => {
+    updateBikeInStore(bike)
+    router.push({
+      pathname: '/(tabs)/customers/[id]/[bikeId]' as any,
+      params: { bikeId: bike.id }
+    })
+  }
+
+  if (!customer) return <Text>No customer in store</Text>;
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -173,7 +182,7 @@ export default function CustomerScreen({ onSuccess }: { onSuccess?: () => void }
                 </Text>
                 <Text style={styles.phone}>{item.colour}</Text>
               </View>
-              <Button>
+              <Button onPress={() => handleShowBike(item)}>
                 <Text>Vis</Text>
               </Button>
               <DeleteConfirmationDialog
