@@ -19,6 +19,8 @@ import {
   SelectValue,
 } from '@/components/ui/stock components/select';
 import { Button } from '@/components/ui/stock components/button';
+import { useBikeStore } from '@/store/bikeStore';
+import { router } from 'expo-router';
 
 
 
@@ -29,6 +31,8 @@ export function CreateBikeForm({ onSuccess, bike }: { onSuccess?: () => void; bi
 
   const customerId = useCustomerStore((s) => s.selectedCustomer?.id)
   const customer = useCustomerStore((s) => s.selectedCustomer);
+  const bikes = useBikeStore((s) => s.bikes);
+  const setBikesInStore = useBikeStore((s) => s.setBikesInStore);
 
   // Select props
   const ref = useRef<TriggerRef>(null);
@@ -48,6 +52,7 @@ export function CreateBikeForm({ onSuccess, bike }: { onSuccess?: () => void; bi
     formState: { errors },
   } = useForm<FormData>({
     defaultValues: {
+      id: bike?.id ?? 0,
       make: bike?.make ?? '',
       model: bike?.model ?? '',
       colour: bike?.colour ?? '',
@@ -62,11 +67,15 @@ export function CreateBikeForm({ onSuccess, bike }: { onSuccess?: () => void; bi
       return;
     }
     try {
-      if (bike) {
+      if (!bike) {
         data.customerId = customerId;
+        console.log("create")
         await createBike(data);
+        router.back()
       } else {
+        console.log("update")
         await updateBike(data);
+        router.back()
       }
       reset();
       onSuccess?.();
