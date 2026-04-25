@@ -10,6 +10,7 @@ import { Controller, useForm } from 'react-hook-form';
 import { Label } from '@/components/ui/stock components/label';
 import { Input } from '@/components/ui/stock components/input';
 import { Text } from '@/components/ui/stock components/text';
+import { DateSelect } from '@/components/dateSelect';
 
 
 type FormData = Repair
@@ -50,7 +51,6 @@ export default function CreateRepairForm({
   
   const customer = useCustomerStore((s) => s.selectedCustomer);
   const bike = useBikeStore((s) => s.selectedBike);
-  const [selected, setSelected] = useState<DateType>();
 
   
   return (
@@ -80,45 +80,49 @@ export default function CreateRepairForm({
           control={control}
           name="createdAt"
           render={({ field: { onChange, onBlur, value } }) => (
-            <Input
-              id="createdAt"
-              onBlur={onBlur}
-              onChangeText={onChange}
-              value={value.toString()}
-              aria-labelledby="createdAt"
-              textContentType="dateTime"
+            <DateSelect
+              value={value}
+              onValueChange={onChange}
+              placeholder="Vælg afhentnings­dato"
             />
           )}
         />
         {errors.createdAt && <Text style={styles.error}>{errors.createdAt.message}</Text>}
       </View>
-
       {/*TODO Figure out a date picker*/}
-      {/*/!* intakeDate *!/*/}
-      {/*<View style={styles.field}>*/}
-      {/*  <Label nativeID="intakeDate">Modtagelse dato:</Label>*/}
-      {/*  <Controller*/}
-      {/*    control={control}*/}
-      {/*    name="intakeDate"*/}
-      {/*    render={({ field: { onChange, onBlur, value } }) => (*/}
-      {/*      */}
-      {/*    )}*/}
-      {/*  />*/}
-      {/*  {errors.intakeDate && <Text style={styles.error}>{errors.intakeDate.message}</Text>}*/}
-      {/*</View>*/}
+      {/* intakeDate */}
+      <View style={styles.field}>
+        <Label nativeID="intakeDate">Modtagelse dato:</Label>
+        <Controller
+          control={control}
+          name="intakeDate"
+          render={({ field: { onChange, onBlur, value } }) => (
+            <DateSelect
+              value={value}
+              onValueChange={onChange}
+              placeholder="Vælg afhentnings­dato"
+            />
+          )}
+        />
+        {errors.intakeDate && <Text style={styles.error}>{errors.intakeDate.message}</Text>}
+      </View>
 
-      {/*/!* deliveryDate *!/*/}
-      {/*<View style={styles.field}>*/}
-      {/*  <Label nativeID="deliveryDate">Færdig dato:</Label>*/}
-      {/*  <Controller*/}
-      {/*    control={control}*/}
-      {/*    name="deliveryDate"*/}
-      {/*    render={({ field: { onChange, onBlur, value } }) => (*/}
-      {/*      */}
-      {/*    )}*/}
-      {/*  />*/}
-      {/*  {errors.deliveryDate && <Text style={styles.error}>{errors.deliveryDate.message}</Text>}*/}
-      {/*</View>*/}
+      {/* deliveryDate */}
+      <View style={styles.field}>
+        <Label nativeID="deliveryDate">Færdig dato:</Label>
+        <Controller
+          control={control}
+          name="deliveryDate"
+          render={({ field: { onChange, onBlur, value } }) => (
+            <DateSelect
+              value={value}
+              onValueChange={onChange}
+              placeholder="Vælg afhentnings­dato"
+            />
+          )}
+        />
+        {errors.deliveryDate && <Text style={styles.error}>{errors.deliveryDate.message}</Text>}
+      </View>
     </View>
   );
 }
