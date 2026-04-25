@@ -4,6 +4,7 @@ import { ScrollView, View } from 'react-native';
 import { StyleSheet } from 'react-native';
 import { Text } from '@/components/ui/stock components/text';
 import * as React from 'react';
+import CreateRepairForm from '@/components/ui/createRepairForm';
 
 export default function BikeInfoScreen() {
   const bike = useBikeStore((s) => s.selectedBike);
@@ -18,6 +19,7 @@ export default function BikeInfoScreen() {
         </View>
         <View style={{ flex: 2, gap: 16, padding: 16 }}>
           <Text>Reparation:</Text>
+          <CreateRepairForm/>
         </View>
       </View>
     </ScrollView>
