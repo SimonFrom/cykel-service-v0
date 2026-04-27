@@ -89,7 +89,6 @@ export default function CreateRepairForm({
         />
         {errors.createdAt && <Text style={styles.error}>{errors.createdAt.message}</Text>}
       </View>
-      {/*TODO Figure out a date picker*/}
       {/* intakeDate */}
       <View style={styles.field}>
         <Label nativeID="intakeDate">Modtagelse dato:</Label>

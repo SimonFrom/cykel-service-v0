@@ -11,5 +11,6 @@ export type Repair = {
     createdAt: Date
     intakeDate: Date
     deliveryDate?: Date
+    complete: boolean
 
 }
