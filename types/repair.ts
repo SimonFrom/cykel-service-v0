@@ -6,11 +6,12 @@ export type Repair = {
     bikeId: number
     customerId: number
     totalPrice: number
-    note?: string[]
+    note?: string
     items: RepairItem[]
     createdAt: Date
     intakeDate: Date
     deliveryDate?: Date
     complete: boolean
+    paymentReceived: boolean
 
 }

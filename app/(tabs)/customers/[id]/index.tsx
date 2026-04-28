@@ -16,6 +16,8 @@ import { useBikeStore } from '@/store/bikeStore';
 import Animated, { LinearTransition } from 'react-native-reanimated';
 import { Bike, bikeTypes } from '@/types/bike';
 import { DeleteConfirmationDialog } from '@/components/ui/deleteConfirmation';
+import { Icon } from '@/components/ui/stock components/icon';
+import { CircleArrowLeft } from 'lucide-react-native';
 
 type FormData = Customer;
 
@@ -81,6 +83,14 @@ export default function CustomerScreen({ onSuccess }: { onSuccess?: () => void }
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
+      <View className={'flex-row-reverse items-center gap-2'}>
+        <Button
+          className={'justify-self-end'}
+          variant={'destructive'}
+          onPress={() => router.push('/customers')}>
+          <Icon as={CircleArrowLeft} className="text-primary-foreground" />
+        </Button>
+      </View>
       <View style={{ flexDirection: 'row', flex: 1 }}>
         <View style={{ flex: 1, gap: 16, padding: 16 }}>
           <View style={styles.field}>
@@ -186,8 +196,8 @@ export default function CustomerScreen({ onSuccess }: { onSuccess?: () => void }
                 <Text>Vis</Text>
               </Button>
               <DeleteConfirmationDialog
-                title={"Er du sikker?"}
-                buttonTitle={"Slet"}
+                title={'Er du sikker?'}
+                buttonTitle={'Slet'}
                 content={`Vil du virkelig slette ${item.make} ${item.model}?`}
                 onConfirm={() => handleDelete(item.id)}
               />

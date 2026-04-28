@@ -16,6 +16,7 @@ import {CircleArrowLeft} from 'lucide-react-native';
 import { Icon } from '@/components/ui/stock components/icon';
 import { router } from 'expo-router';
 import { Switch } from '@/components/ui/stock components/switch';
+import { Textarea } from '@/components/ui/stock components/textarea';
 
 type FormData = Repair;
 export default function CreateRepairForm({
@@ -45,7 +46,7 @@ export default function CreateRepairForm({
       id: repair?.id ?? 0,
       customerId: repair?.customerId ?? 0,
       bikeId: repair?.bikeId ?? 0,
-      note: repair?.note ?? [],
+      note: repair?.note ?? '',
       createdAt: repair?.createdAt ?? new Date(),
       intakeDate: repair?.intakeDate ?? new Date(),
       deliveryDate: repair?.deliveryDate ?? new Date(),
@@ -55,13 +56,17 @@ export default function CreateRepairForm({
 
   const customer = useCustomerStore((s) => s.selectedCustomer);
   const bike = useBikeStore((s) => s.selectedBike);
-  const [checked, setChecked] = useState(false);
+  const [checkedComplete, setCheckedComplete] = useState(false);
+  const [checkedPayment, setCheckedPayment] = useState(false);
 
   return (
     <View style={styles.overlay}>
       <View style={styles.modal}>
         <View className={'flex-row-reverse items-center gap-2'}>
-          <Button className={'justify-self-end'} variant={'destructive'} onPress={() => router.back()}>
+          <Button
+            className={'justify-self-end'}
+            variant={'destructive'}
+            onPress={() => router.back()}>
             <Icon as={CircleArrowLeft} className="text-primary-foreground" />
           </Button>
           <Button className={''} onPress={() => router.back()}>
@@ -69,7 +74,6 @@ export default function CreateRepairForm({
           </Button>
         </View>
         <View className={'mb-1 flex-row items-center gap-2'}>
-          {/*TODO Add payed and follow up switches*/}
           <Label nativeID="complete">Færdig:</Label>
           <Controller
             control={control}
@@ -78,13 +82,29 @@ export default function CreateRepairForm({
               <Switch
                 id="complete"
                 onBlur={onBlur}
-                checked={checked}
-                onCheckedChange={setChecked}
+                checked={checkedComplete}
+                onCheckedChange={setCheckedComplete}
                 aria-labelledby="complete"
               />
             )}
           />
-          {errors.complete && <Text style={styles.error}>{errors.complete.message}</Text>}
+          <Label nativeID="paymentReceived">Betalt:</Label>
+          <Controller
+            control={control}
+            name="paymentReceived"
+            render={({ field: { onBlur } }) => (
+              <Switch
+                id="paymentReceived"
+                onBlur={onBlur}
+                checked={checkedPayment}
+                onCheckedChange={setCheckedPayment}
+                aria-labelledby="paymentReceived"
+              />
+            )}
+          />
+          {errors.paymentReceived && (
+            <Text style={styles.error}>{errors.paymentReceived.message}</Text>
+          )}
         </View>
 
         <View>
@@ -156,9 +176,28 @@ export default function CreateRepairForm({
             />
             {errors.deliveryDate && <Text style={styles.error}>{errors.deliveryDate.message}</Text>}
           </View>
-          {/*TODO Add total price label, note textfield*/}
+
+          {/* note */}
+          <View style={styles.field}>
+            <Label nativeID="note">Note:</Label>
+            <Controller
+              control={control}
+              name="note"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <Textarea
+                  value={value ?? ''}
+                  onChangeText={onChange}
+                  aria-labelledby="note"
+                  placeholder="Skriv det du mener du uden tvivl kan huske her..."
+                />
+              )}
+            />
+            {errors.note && <Text style={styles.error}>{errors.note.message}</Text>}
+          </View>
+
+          {/*TODO Add total price label in the table arangement*/}
           <Button className="mt-2 w-20">
-            <Text>Gem</Text>
+            <Text>Opret</Text>
           </Button>
         </View>
       </View>
