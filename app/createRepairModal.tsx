@@ -1,4 +1,4 @@
-import { Repair } from '@/types/repair';
+import { Repair, mockRepairs } from '@/types/repair';
 import { RepairItem } from '@/types/repairItems';
 import { useCustomerStore } from '@/store/customerStore';
 import { useBikeStore } from '@/store/bikeStore';
@@ -17,6 +17,9 @@ import { Icon } from '@/components/ui/stock components/icon';
 import { router } from 'expo-router';
 import { Switch } from '@/components/ui/stock components/switch';
 import { Textarea } from '@/components/ui/stock components/textarea';
+import Animated, { LinearTransition } from 'react-native-reanimated';
+import { bikeTypes } from '@/types/bike';
+import { DeleteConfirmationDialog } from '@/components/ui/deleteConfirmation';
 
 type FormData = Repair;
 export default function CreateRepairForm({
@@ -56,8 +59,13 @@ export default function CreateRepairForm({
 
   const customer = useCustomerStore((s) => s.selectedCustomer);
   const bike = useBikeStore((s) => s.selectedBike);
+
+
+
   const [checkedComplete, setCheckedComplete] = useState(false);
   const [checkedPayment, setCheckedPayment] = useState(false);
+
+  const repairs = mockRepairs;
 
   return (
     <View style={styles.overlay}>
@@ -195,6 +203,8 @@ export default function CreateRepairForm({
             {errors.note && <Text style={styles.error}>{errors.note.message}</Text>}
           </View>
 
+
+
           {/*TODO Add total price label in the table arangement*/}
           <Button className="mt-2 w-20">
             <Text>Opret</Text>
@@ -212,7 +222,7 @@ const styles = StyleSheet.create({
   },
   field: {
     gap: 4,
-    maxWidth: 220
+    maxWidth: 220,
   },
   error: {
     fontSize: 12,
@@ -225,7 +235,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     borderRadius: 12,
     overflow: 'hidden',
-    padding: 10
+    padding: 10,
   },
   overlay: {
     flex: 1,
@@ -233,4 +243,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+
 });
