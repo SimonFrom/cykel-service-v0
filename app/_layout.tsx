@@ -36,6 +36,14 @@ export default function RootLayout() {
             title: 'Reperation',
           }}
         />
+        <Stack.Screen
+          name="addRepairLineModal"
+          options={{
+            presentation: 'transparentModal',
+            animation: 'fade',
+            headerShown: false,
+          }}
+        />
       </Stack>
     </React.Fragment>
   );

@@ -1,25 +1,23 @@
 import { Repair, mockRepairs } from '@/types/repair';
-import { RepairItem } from '@/types/repairItems';
+import { createRepair } from '@/crud/repairs';
+import { RepairLinesSection } from '@/components/ui/RepairLinesSection';
 import { useCustomerStore } from '@/store/customerStore';
 import { useBikeStore } from '@/store/bikeStore';
-import React, { useRef, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import { TriggerRef } from '@rn-primitives/select';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Dimensions, Platform, StyleSheet, View } from 'react-native';
-import { Controller, useForm } from 'react-hook-form';
+import { Platform, StyleSheet, View } from 'react-native';
+import { Controller, useForm, useFieldArray } from 'react-hook-form';
 import { Label } from '@/components/ui/stock components/label';
 import { Input } from '@/components/ui/stock components/input';
 import { Text } from '@/components/ui/stock components/text';
 import { DateSelect } from '@/components/dateSelect';
 import { Button } from '@/components/ui/stock components/button';
-import {CircleArrowLeft} from 'lucide-react-native';
+import { CircleArrowLeft } from 'lucide-react-native';
 import { Icon } from '@/components/ui/stock components/icon';
 import { router } from 'expo-router';
 import { Switch } from '@/components/ui/stock components/switch';
 import { Textarea } from '@/components/ui/stock components/textarea';
-import Animated, { LinearTransition } from 'react-native-reanimated';
-import { bikeTypes } from '@/types/bike';
-import { DeleteConfirmationDialog } from '@/components/ui/deleteConfirmation';
 
 type FormData = Repair;
 export default function CreateRepairForm({
@@ -38,32 +36,44 @@ export default function CreateRepairForm({
     left: 12,
     right: 12,
   };
+  const customer = useCustomerStore((s) => s.selectedCustomer);
+  const bike = useBikeStore((s) => s.selectedBike);
 
   const {
     control,
     handleSubmit,
+    watch,
     reset,
     formState: { errors },
-  } = useForm<FormData>({
+  } = useForm<Repair>({
     defaultValues: {
       id: repair?.id ?? 0,
-      customerId: repair?.customerId ?? 0,
-      bikeId: repair?.bikeId ?? 0,
+      customerId: repair?.customerId ?? customer?.id,
+      bikeId: repair?.bikeId ?? bike?.id,
       note: repair?.note ?? '',
       createdAt: repair?.createdAt ?? new Date(),
       intakeDate: repair?.intakeDate ?? new Date(),
       deliveryDate: repair?.deliveryDate ?? new Date(),
-      complete: repair?.complete ?? false
+      complete: repair?.complete ?? false,
+      items: repair?.items ?? [],
     },
   });
-
-  const customer = useCustomerStore((s) => s.selectedCustomer);
-  const bike = useBikeStore((s) => s.selectedBike);
 
 
 
   const [checkedComplete, setCheckedComplete] = useState(false);
   const [checkedPayment, setCheckedPayment] = useState(false);
+
+  const onSubmit = async (data: Repair) => {
+    try {
+      await createRepair(data);
+      reset();
+      onSuccess?.();
+      router.back();
+    } catch (error) {
+      console.error(error);
+    }
+  }
 
   const repairs = mockRepairs;
 
@@ -76,9 +86,6 @@ export default function CreateRepairForm({
             variant={'destructive'}
             onPress={() => router.back()}>
             <Icon as={CircleArrowLeft} className="text-primary-foreground" />
-          </Button>
-          <Button className={''} onPress={() => router.back()}>
-            <Text>Tilføj linje</Text>
           </Button>
         </View>
         <View className={'mb-1 flex-row items-center gap-2'}>
@@ -114,101 +121,105 @@ export default function CreateRepairForm({
             <Text style={styles.error}>{errors.paymentReceived.message}</Text>
           )}
         </View>
+        <View className={'flex-row items-center gap-2'}>
+          <View>
+            {/* id */}
+            <View style={styles.field}>
+              <Label nativeID="id">Reperations nr:</Label>
+              <Controller
+                control={control}
+                name="id"
+                render={({ field: { onChange, onBlur, value } }) => (
+                  <Input
+                    id="id"
+                    onBlur={onBlur}
+                    onChangeText={onChange}
+                    value={value.toString()}
+                    aria-labelledby="id"
+                    editable={false}
+                  />
+                )}
+              />
+              {errors.id && <Text style={styles.error}>{errors.id.message}</Text>}
+            </View>
+            {/* createdAt */}
+            <View style={styles.field}>
+              <Label nativeID="createdAt">Oprettelses dato:</Label>
+              <Controller
+                control={control}
+                name="createdAt"
+                render={({ field: { onChange, onBlur, value } }) => (
+                  <DateSelect
+                    value={value}
+                    onValueChange={onChange}
+                    placeholder="Vælg afhentnings­dato"
+                  />
+                )}
+              />
+              {errors.createdAt && <Text style={styles.error}>{errors.createdAt.message}</Text>}
+            </View>
+            {/* intakeDate */}
+            <View style={styles.field}>
+              <Label nativeID="intakeDate">Modtagelse dato:</Label>
+              <Controller
+                control={control}
+                name="intakeDate"
+                render={({ field: { onChange, onBlur, value } }) => (
+                  <DateSelect
+                    value={value}
+                    onValueChange={onChange}
+                    placeholder="Vælg afhentnings­dato"
+                  />
+                )}
+              />
+              {errors.intakeDate && <Text style={styles.error}>{errors.intakeDate.message}</Text>}
+            </View>
 
-        <View>
-          {/* id */}
-          <View style={styles.field}>
-            <Label nativeID="id">Reperations nr:</Label>
-            <Controller
-              control={control}
-              name="id"
-              render={({ field: { onChange, onBlur, value } }) => (
-                <Input
-                  id="id"
-                  onBlur={onBlur}
-                  onChangeText={onChange}
-                  value={value.toString()}
-                  aria-labelledby="id"
-                  editable={false}
-                />
+            {/* deliveryDate */}
+            <View style={styles.field}>
+              <Label nativeID="deliveryDate">Færdig dato:</Label>
+              <Controller
+                control={control}
+                name="deliveryDate"
+                render={({ field: { onChange, onBlur, value } }) => (
+                  <DateSelect
+                    value={value}
+                    onValueChange={onChange}
+                    placeholder="Vælg afhentnings­dato"
+                  />
+                )}
+              />
+              {errors.deliveryDate && (
+                <Text style={styles.error}>{errors.deliveryDate.message}</Text>
               )}
-            />
-            {errors.id && <Text style={styles.error}>{errors.id.message}</Text>}
-          </View>
-          {/* createdAt */}
-          <View style={styles.field}>
-            <Label nativeID="createdAt">Oprettelses dato:</Label>
-            <Controller
-              control={control}
-              name="createdAt"
-              render={({ field: { onChange, onBlur, value } }) => (
-                <DateSelect
-                  value={value}
-                  onValueChange={onChange}
-                  placeholder="Vælg afhentnings­dato"
-                />
-              )}
-            />
-            {errors.createdAt && <Text style={styles.error}>{errors.createdAt.message}</Text>}
-          </View>
-          {/* intakeDate */}
-          <View style={styles.field}>
-            <Label nativeID="intakeDate">Modtagelse dato:</Label>
-            <Controller
-              control={control}
-              name="intakeDate"
-              render={({ field: { onChange, onBlur, value } }) => (
-                <DateSelect
-                  value={value}
-                  onValueChange={onChange}
-                  placeholder="Vælg afhentnings­dato"
-                />
-              )}
-            />
-            {errors.intakeDate && <Text style={styles.error}>{errors.intakeDate.message}</Text>}
-          </View>
+            </View>
 
-          {/* deliveryDate */}
-          <View style={styles.field}>
-            <Label nativeID="deliveryDate">Færdig dato:</Label>
-            <Controller
-              control={control}
-              name="deliveryDate"
-              render={({ field: { onChange, onBlur, value } }) => (
-                <DateSelect
-                  value={value}
-                  onValueChange={onChange}
-                  placeholder="Vælg afhentnings­dato"
-                />
-              )}
-            />
-            {errors.deliveryDate && <Text style={styles.error}>{errors.deliveryDate.message}</Text>}
+            {/* note */}
+            <View style={styles.field}>
+              <Label nativeID="note">Note:</Label>
+              <Controller
+                control={control}
+                name="note"
+                render={({ field: { onChange, onBlur, value } }) => (
+                  <Textarea
+                    value={value ?? ''}
+                    onChangeText={onChange}
+                    aria-labelledby="note"
+                    placeholder="Skriv det du mener du uden tvivl kan huske her..."
+                  />
+                )}
+              />
+              {errors.note && <Text style={styles.error}>{errors.note.message}</Text>}
+            </View>
+
+            {/*TODO Add total price label in the table arangement*/}
+            <Button className="mt-2 w-20" onPress={handleSubmit(onSubmit)}>
+              <Text>Opret</Text>
+            </Button>
           </View>
-
-          {/* note */}
-          <View style={styles.field}>
-            <Label nativeID="note">Note:</Label>
-            <Controller
-              control={control}
-              name="note"
-              render={({ field: { onChange, onBlur, value } }) => (
-                <Textarea
-                  value={value ?? ''}
-                  onChangeText={onChange}
-                  aria-labelledby="note"
-                  placeholder="Skriv det du mener du uden tvivl kan huske her..."
-                />
-              )}
-            />
-            {errors.note && <Text style={styles.error}>{errors.note.message}</Text>}
+          <View className={'flex-row-reverse items-center gap-2'}>
+            <RepairLinesSection control={control} />
           </View>
-
-
-
-          {/*TODO Add total price label in the table arangement*/}
-          <Button className="mt-2 w-20">
-            <Text>Opret</Text>
-          </Button>
         </View>
       </View>
     </View>
@@ -243,5 +254,4 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-
 });
