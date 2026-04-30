@@ -28,8 +28,7 @@ const mapItemRow = (row: any): RepairItem => ({
   total: row.total,
 });
 
-const customer = useCustomerStore((s) => s.selectedCustomer);
-const bike = useBikeStore((s) => s.selectedBike);
+
 
 export const getRepairs = async (): Promise<Repair[]> => {
   // One round-trip using a nested select — supabase pulls items in the same query
@@ -60,8 +59,8 @@ export const createRepair = async (repair: Omit<Repair, 'id'>): Promise<number> 
   const { data, error } = await supabase
     .from('repairs')
     .insert({
-      bike_id: bike?.id,
-      customer_id: customer?.id,
+      bike_id: repair.bikeId,
+      customer_id: repair.customerId,
       total_price: repair.totalPrice,
       note: repair.note ?? null,
       created_at: repair.createdAt.toISOString(),

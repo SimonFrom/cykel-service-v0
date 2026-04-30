@@ -39,14 +39,14 @@ export default function Screen() {
 
   const setSelectedCustomer = useCustomerStore(s => s.setSelectedCustomer);
   const setCustomersInStore = useCustomerStore(s => s.setCustomersInStore);
-  const deleteCustomerInStore = useCustomerStore(s => s.deleteCustomerInStore);
+  const deleteCustomerInStore = useCustomerStore((s) => s.deleteCustomerInStore);
   const handlePress = (customer: Customer) => {
     setSelectedCustomer(customer);
     router.push({
-      pathname: '/(tabs)/customers/[id]' as any,
-      params: { id: customer.id },
+      pathname: '/customers/[id]',
+      params: { id: String(customer.id) },
     });
-  }
+  };
 
   const handleDelete = async (id: number) => {
     await deleteCustomer(id);

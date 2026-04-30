@@ -48,14 +48,12 @@ export default function CreateRepairForm({
   } = useForm<Repair>({
     defaultValues: {
       id: repair?.id ?? 0,
-      customerId: repair?.customerId ?? customer?.id,
-      bikeId: repair?.bikeId ?? bike?.id,
       note: repair?.note ?? '',
       createdAt: repair?.createdAt ?? new Date(),
       intakeDate: repair?.intakeDate ?? new Date(),
       deliveryDate: repair?.deliveryDate ?? new Date(),
       complete: repair?.complete ?? false,
-      items: repair?.items ?? [],
+      items: repair?.items ?? []
     },
   });
 
@@ -65,15 +63,25 @@ export default function CreateRepairForm({
   const [checkedPayment, setCheckedPayment] = useState(false);
 
   const onSubmit = async (data: Repair) => {
+    if (!customer?.id || !bike?.id) {
+      console.error('Missing customer or bike');
+      return;
+    }
+
     try {
-      await createRepair(data);
+      await createRepair({
+        ...data,
+        customerId: customer.id,
+        bikeId: bike.id,
+      });
       reset();
       onSuccess?.();
       router.back();
     } catch (error) {
       console.error(error);
     }
-  }
+  };
+
 
   const repairs = mockRepairs;
 
