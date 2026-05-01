@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { View, ScrollView, StyleSheet } from 'react-native';
 import { useForm, Controller } from 'react-hook-form';
 import { Input } from '@/components/ui/stock components/input';
@@ -9,6 +9,8 @@ import { createCustomer } from '@/crud/customers';
 import { Customer } from '@/types/customer';
 import { useCustomerStore } from '@/store/customerStore';
 import { router } from 'expo-router';
+import { Icon } from '@/components/ui/stock components/icon';
+import { CircleArrowLeft } from 'lucide-react-native';
 
 type FormData = Omit<Customer, 'id'>;
 
@@ -50,6 +52,14 @@ export default function CreateCustomerModal({ onSuccess }: { onSuccess?: () => v
     <View style={styles.overlay}>
       <View style={styles.modal}>
         <ScrollView contentContainerStyle={styles.container}>
+          <View className={'flex-row-reverse items-center gap-2'}>
+            <Button
+              className={'justify-self-end'}
+              variant={'destructive'}
+              onPress={() => router.back()}>
+              <Icon as={CircleArrowLeft} className="text-primary-foreground" />
+            </Button>
+          </View>
           {/* First Name */}
           <View style={styles.field}>
             <Label nativeID="firstName">Fornavn</Label>

@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/stock components/input';
 import { Text } from '@/components/ui/stock components/text';
 import { useCustomerStore } from '@/store/customerStore';
 import { TriggerRef } from '@rn-primitives/select';
-import { useRef } from 'react';
+import React, { useRef } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   Select,
@@ -21,6 +21,8 @@ import {
 import { Button } from '@/components/ui/stock components/button';
 import { useBikeStore } from '@/store/bikeStore';
 import { router } from 'expo-router';
+import { Icon } from '@/components/ui/stock components/icon';
+import { CircleArrowLeft } from 'lucide-react-native';
 
 
 type FormData = Bike;
@@ -76,6 +78,14 @@ export default function CreateBikeModal({ onSuccess }: { onSuccess?: () => void 
     <View style={styles.overlay}>
       <View style={styles.modal}>
         <ScrollView contentContainerStyle={styles.container}>
+          <View className={'flex-row-reverse items-center gap-2'}>
+            <Button
+              className={'justify-self-end'}
+              variant={'destructive'}
+              onPress={() => router.back()}>
+              <Icon as={CircleArrowLeft} className="text-primary-foreground" />
+            </Button>
+          </View>
           {/* Make */}
           <View style={styles.field}>
             <Label nativeID="make">Mærke</Label>
