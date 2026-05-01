@@ -5,12 +5,13 @@ import { RepairItem } from '@/types/repairItems';
 import { useCustomerStore } from '@/store/customerStore';
 import { useBikeStore } from '@/store/bikeStore';
 
+
 // Helpers to keep mapping in one place
 const mapRepairRow = (row: any, items: RepairItem[]): Repair => ({
   id: row.id,
   bikeId: row.bike_id,
   customerId: row.customer_id,
-  totalPrice: row.total_price,
+  totalPrice: items.reduce((sum: number, item: RepairItem) => sum + (item.total ?? 0), 0),
   note: row.note ?? undefined,
   items,
   createdAt: new Date(row.created_at),
@@ -84,7 +85,7 @@ export const createRepair = async (repair: Omit<Repair, 'id'>): Promise<number> 
         title: item.title,
         price: item.price,
         quantity: item.quantity,
-        total: item.total,
+        total: item.price * item.quantity,
       }))
     );
 

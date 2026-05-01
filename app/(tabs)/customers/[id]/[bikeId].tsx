@@ -1,23 +1,49 @@
 import { useBikeStore } from '@/store/bikeStore';
 import { useCustomerStore } from '@/store/customerStore';
+import { useRepairStore } from '@/store/repairStore';
+import { deleteRepair } from '@/crud/repairs';
 import { CreateBikeForm } from '@/components/ui/createBikeForm';
 import { ScrollView, View } from 'react-native';
 import { StyleSheet } from 'react-native';
 import { Text } from '@/components/ui/stock components/text';
 import * as React from 'react';
-import CreateRepairForm from '@/components/ui/createRepairForm';
 import { Button } from '@/components/ui/stock components/button';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { Icon } from '@/components/ui/stock components/icon';
 import { CircleArrowLeft } from 'lucide-react-native';
-import { mockRepairs } from '@/types/repair';
+import { getRepairs } from '@/crud/repairs';
+import { Repair } from '@/types/repair';
 import Animated, { LinearTransition } from 'react-native-reanimated';
 import { DeleteConfirmationDialog } from '@/components/ui/deleteConfirmation';
+import { useCallback, useEffect } from 'react';
+import { deleteBike } from '@/crud/bikes';
 
 export default function BikeInfoScreen() {
   const bike = useBikeStore((s) => s.selectedBike);
   const customer = useCustomerStore((s) => s.selectedCustomer);
-  const repairs = mockRepairs;
+
+
+  const repairs = useRepairStore((s) => s.repairs)
+  const deleteRepairInStore = useRepairStore((s) => s.deleteRepair);
+  const setRepairsInStore = useRepairStore((s) => s.setRepairsInStore);
+
+
+  const fetchRepairs = async () => {
+    const repairs = await getRepairs();
+    setRepairsInStore(repairs);
+  }
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchRepairs();
+    }, [])
+  );
+
+  const handleDelete = async (id: number) => {
+    await deleteRepair(id);
+    deleteRepairInStore(id);
+  };
+
 
   if (!bike) return null;
 
@@ -53,21 +79,21 @@ export default function BikeInfoScreen() {
                 <View style={styles.row}>
                   <View style={styles.info}>
                     <Text style={styles.name}>
-                      {item.id}
+                      Reperations nummer: {item.id}
                     </Text>
                     <Text style={styles.name}>
                       Total pris: {item.totalPrice}
                     </Text>
-                    <Text style={styles.name}>{item.createdAt.toString()}</Text>
+                    <Text style={styles.name}>Oprettet: {item.createdAt.toLocaleDateString()}</Text>
                   </View>
-                  <Button >
+                  <Button onPress={() => router.push('/createRepairModal')}>
                     <Text>Vis</Text>
                   </Button>
                   <DeleteConfirmationDialog
                     title={'Er du sikker?'}
                     buttonTitle={'Slet'}
                     content={`Vil du virkelig slette reperation nr ${item.id}?`}
-
+                    onConfirm={() => handleDelete(item.id)}
                   />
                 </View>
               )}
