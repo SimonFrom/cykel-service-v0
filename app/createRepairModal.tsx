@@ -18,11 +18,11 @@ import { Icon } from '@/components/ui/stock components/icon';
 import { router } from 'expo-router';
 import { Switch } from '@/components/ui/stock components/switch';
 import { Textarea } from '@/components/ui/stock components/textarea';
+import { useRepairStore } from '@/store/repairStore';
 
 type FormData = Repair;
 export default function CreateRepairForm({
   onSuccess,
-  repair,
 }: {
   onSuccess?: () => void;
   repair?: Repair;
@@ -38,6 +38,8 @@ export default function CreateRepairForm({
   };
   const customer = useCustomerStore((s) => s.selectedCustomer);
   const bike = useBikeStore((s) => s.selectedBike);
+  const repair = useRepairStore((s) => s.selectedRepair);
+  const updateSelectedRepairInStore = useRepairStore((s) => s.updateRepairInStore)
 
   const {
     control,
@@ -82,8 +84,11 @@ export default function CreateRepairForm({
     }
   };
 
+  // TODO
+  const handleBack = () => {
 
-  const repairs = mockRepairs;
+  }
+
 
   return (
     <View style={styles.overlay}>
@@ -92,7 +97,7 @@ export default function CreateRepairForm({
           <Button
             className={'justify-self-end'}
             variant={'destructive'}
-            onPress={() => router.back()}>
+            onPress={() => handleBack()}>
             <Icon as={CircleArrowLeft} className="text-primary-foreground" />
           </Button>
         </View>

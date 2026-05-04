@@ -26,10 +26,11 @@ export default function BikeInfoScreen() {
   const repairs = useRepairStore((s) => s.repairs)
   const deleteRepairInStore = useRepairStore((s) => s.deleteRepair);
   const setRepairsInStore = useRepairStore((s) => s.setRepairsInStore);
+  const setRepairInStore = useRepairStore((s) => s.setSelectedRepair)
 
 
   const fetchRepairs = async () => {
-    const repairs = await getRepairs();
+    const repairs = await getRepairs(bike.id);
     setRepairsInStore(repairs);
   }
 
@@ -43,6 +44,11 @@ export default function BikeInfoScreen() {
     await deleteRepair(id);
     deleteRepairInStore(id);
   };
+
+  const handleShowRepair = (repair: Repair) => {
+    setRepairInStore(repair);
+    router.push('/createRepairModal');
+  }
 
 
   if (!bike) return null;
@@ -86,7 +92,7 @@ export default function BikeInfoScreen() {
                     </Text>
                     <Text style={styles.name}>Oprettet: {item.createdAt.toLocaleDateString()}</Text>
                   </View>
-                  <Button onPress={() => router.push('/createRepairModal')}>
+                  <Button onPress={() => handleShowRepair(item)}>
                     <Text>Vis</Text>
                   </Button>
                   <DeleteConfirmationDialog

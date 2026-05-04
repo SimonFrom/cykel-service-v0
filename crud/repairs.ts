@@ -31,9 +31,12 @@ const mapItemRow = (row: any): RepairItem => ({
 
 
 
-export const getRepairs = async (): Promise<Repair[]> => {
+export const getRepairs = async (bikeId: number): Promise<Repair[]> => {
   // One round-trip using a nested select — supabase pulls items in the same query
-  const { data, error } = await supabase.from('repairs').select('*, repair_items(*)');
+  const { data, error } = await supabase
+    .from('repairs')
+    .select('*, repair_items(*)')
+    .eq('bike_id', bikeId)
 
   if (error) throw error;
 
