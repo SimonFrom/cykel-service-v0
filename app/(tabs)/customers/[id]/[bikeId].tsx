@@ -88,7 +88,7 @@ export default function BikeInfoScreen() {
                       Reperations nummer: {item.id}
                     </Text>
                     <Text style={styles.name}>
-                      Total pris: {item.totalPrice}
+                      Total pris: {item.totalPrice} kr
                     </Text>
                     <Text style={styles.name}>Oprettet: {item.createdAt.toLocaleDateString()}</Text>
                   </View>

@@ -39,7 +39,7 @@ export default function CreateRepairForm({
   const customer = useCustomerStore((s) => s.selectedCustomer);
   const bike = useBikeStore((s) => s.selectedBike);
   const repair = useRepairStore((s) => s.selectedRepair);
-  const updateSelectedRepairInStore = useRepairStore((s) => s.updateRepairInStore)
+  const setSelectedRepairInStore = useRepairStore((s) => s.setSelectedRepair)
 
   const {
     control,
@@ -84,9 +84,10 @@ export default function CreateRepairForm({
     }
   };
 
-  // TODO
-  const handleBack = () => {
 
+  const handleBack = () => {
+    setSelectedRepairInStore(null)
+    router.back();
   }
 
 

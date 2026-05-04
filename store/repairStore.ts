@@ -5,7 +5,7 @@ type RepairStore = {
   repairs: Repair[];
   setRepairsInStore: (repairs: Repair[]) => void;
   selectedRepair: Repair | null;
-  setSelectedRepair: (selectedRepair: Repair) => void;
+  setSelectedRepair: (selectedRepair: Repair | null) => void;
   updateRepairInStore: (repair: Repair) => void;
   deleteRepair: (id: number) => void;
 };
