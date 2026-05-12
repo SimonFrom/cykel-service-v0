@@ -9,6 +9,7 @@ import { useColorScheme } from 'nativewind';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 
+
 export {
   // Catch any errors thrown by the Layout component.
   ErrorBoundary,

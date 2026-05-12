@@ -18,6 +18,7 @@ import { Bike, bikeTypes } from '@/types/bike';
 import { DeleteConfirmationDialog } from '@/components/ui/deleteConfirmation';
 import { Icon } from '@/components/ui/stock components/icon';
 import { CircleArrowLeft } from 'lucide-react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 type FormData = Customer;
 
@@ -82,92 +83,90 @@ export default function CustomerScreen({ onSuccess }: { onSuccess?: () => void }
   if (!customer) return <Text>No customer in store</Text>;
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <View className={'flex-row-reverse items-center gap-2'}>
-        <Button
-          className={'justify-self-end'}
-          variant={'destructive'}
-          onPress={() => router.push('/customers')}>
-          <Icon as={CircleArrowLeft} className="text-primary-foreground" />
-        </Button>
-      </View>
-      <View style={{ flexDirection: 'row', flex: 1 }}>
-        <View style={{ flex: 1, gap: 16, padding: 16 }}>
-          <View style={styles.field}>
-            <Label nativeID="firstName">Fornavn</Label>
-            <Controller
-              control={control}
-              name="firstName"
-              render={({ field: { onChange, value } }) => (
-                <Input aria-labelledby="firstName" onChangeText={onChange} value={value} />
-              )}
-            />
-          </View>
-
-          <View style={styles.field}>
-            <Label nativeID="lastName">Efternavn</Label>
-            <Controller
-              control={control}
-              name="lastName"
-              render={({ field: { onChange, value } }) => (
-                <Input aria-labelledby="lastName" onChangeText={onChange} value={value} />
-              )}
-            />
-          </View>
-
-          <View style={styles.field}>
-            <Label nativeID="phoneNumber">Telefon</Label>
-            <Controller
-              control={control}
-              name="phoneNumber"
-              render={({ field: { onChange, value } }) => (
-                <Input aria-labelledby="phoneNumber" onChangeText={onChange} value={value} />
-              )}
-            />
-          </View>
-
-          <View style={styles.field}>
-            <Label nativeID="email">Email</Label>
-            <Controller
-              control={control}
-              name="email"
-              render={({ field: { onChange, value } }) => (
-                <Input aria-labelledby="email" onChangeText={onChange} value={value} />
-              )}
-            />
-          </View>
-          {customer.club && (
+    <SafeAreaView style={{ flex: 1 }}>
+      <ScrollView contentContainerStyle={styles.container}>
+        <View className={'flex-row-reverse items-center gap-2'}>
+          <Button
+            className={'justify-self-end'}
+            variant={'destructive'}
+            onPress={() => router.push('/customers')}>
+            <Icon as={CircleArrowLeft} className="text-primary-foreground" />
+          </Button>
+        </View>
+        <View style={{ flexDirection: 'row', flex: 1 }}>
+          <View style={{ flex: 1, gap: 16, padding: 16 }}>
             <View style={styles.field}>
-              <Label nativeID="club">Klub</Label>
+              <Label nativeID="firstName">Fornavn</Label>
               <Controller
                 control={control}
-                name="club"
+                name="firstName"
                 render={({ field: { onChange, value } }) => (
-                  <Input aria-labelledby="club" onChangeText={onChange} value={value ?? ''} />
+                  <Input aria-labelledby="firstName" onChangeText={onChange} value={value} />
                 )}
               />
             </View>
-          )}
-          <View style={styles.field}>
-            <Label nativeID="note">Noter</Label>
-            <Controller
-              control={control}
-              name="note"
-              render={({ field: { onChange, value } }) => (
-                <Textarea aria-labelledby="note" onChangeText={onChange} value={value ?? ''} />
-              )}
-            />
+
+            <View style={styles.field}>
+              <Label nativeID="lastName">Efternavn</Label>
+              <Controller
+                control={control}
+                name="lastName"
+                render={({ field: { onChange, value } }) => (
+                  <Input aria-labelledby="lastName" onChangeText={onChange} value={value} />
+                )}
+              />
+            </View>
+
+            <View style={styles.field}>
+              <Label nativeID="phoneNumber">Telefon</Label>
+              <Controller
+                control={control}
+                name="phoneNumber"
+                render={({ field: { onChange, value } }) => (
+                  <Input aria-labelledby="phoneNumber" onChangeText={onChange} value={value} />
+                )}
+              />
+            </View>
+
+            <View style={styles.field}>
+              <Label nativeID="email">Email</Label>
+              <Controller
+                control={control}
+                name="email"
+                render={({ field: { onChange, value } }) => (
+                  <Input aria-labelledby="email" onChangeText={onChange} value={value} />
+                )}
+              />
+            </View>
+            {customer.club && (
+              <View style={styles.field}>
+                <Label nativeID="club">Klub</Label>
+                <Controller
+                  control={control}
+                  name="club"
+                  render={({ field: { onChange, value } }) => (
+                    <Input aria-labelledby="club" onChangeText={onChange} value={value ?? ''} />
+                  )}
+                />
+              </View>
+            )}
+            <View style={styles.field}>
+              <Label nativeID="note">Noter</Label>
+              <Controller
+                control={control}
+                name="note"
+                render={({ field: { onChange, value } }) => (
+                  <Textarea aria-labelledby="note" onChangeText={onChange} value={value ?? ''} />
+                )}
+              />
+            </View>
+
+            <Button className="w-3/12" onPress={handleSubmit(onSubmit)}>
+              <Text>Gem</Text>
+            </Button>
           </View>
-
-          <Button className="w-3/12" onPress={handleSubmit(onSubmit)}>
-            <Text>Gem</Text>
-          </Button>
         </View>
-
-        <View style={{ flex: 1, gap: 16, padding: 16 }}>
-          <Text>Reparationer:</Text>
-        </View>
-      </View>
+      </ScrollView>
       <View>
         <Button className="mr-5 w-28" onPress={() => router.push('/createBikeModal' as any)}>
           <Text>Opret cykel</Text>
@@ -205,7 +204,7 @@ export default function CustomerScreen({ onSuccess }: { onSuccess?: () => void }
           )}
         />
       </View>
-    </ScrollView>
+    </SafeAreaView>
   );
 }
 

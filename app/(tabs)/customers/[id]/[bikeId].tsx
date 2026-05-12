@@ -17,6 +17,7 @@ import Animated, { LinearTransition } from 'react-native-reanimated';
 import { DeleteConfirmationDialog } from '@/components/ui/deleteConfirmation';
 import { useCallback, useEffect } from 'react';
 import { deleteBike } from '@/crud/bikes';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function BikeInfoScreen() {
   const bike = useBikeStore((s) => s.selectedBike);
@@ -55,58 +56,58 @@ export default function BikeInfoScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <View className={'flex-row-reverse items-center gap-2'}>
-        <Button
-          className={'justify-self-end'}
-          variant={'destructive'}
-          onPress={() => router.push('/customers/${customer.id}')}>
-          <Icon as={CircleArrowLeft} className="text-primary-foreground" />
-        </Button>
-      </View>
-      <View style={{ flexDirection: 'row', flex: 1 }}>
-        <View style={{ flex: 1, gap: 16, padding: 16 }}>
-          <CreateBikeForm bike={bike} />
-        </View>
-        <View style={{ flex: 2, gap: 16, padding: 16 }}>
-          <Text>Reparation:</Text>
-          <Button onPress={() => router.push('/createRepairModal' as any)}>
-            <Text>Opret reparation</Text>
+      <SafeAreaView style={{flex: 1}}>
+        <View className={'flex-row-reverse items-center gap-2'}>
+          <Button
+            className={'justify-self-end'}
+            variant={'destructive'}
+            onPress={() => router.push('/customers/${customer.id}')}>
+            <Icon as={CircleArrowLeft} className="text-primary-foreground" />
           </Button>
-          <View>
-            <Animated.FlatList
-              data={repairs}
-              itemLayoutAnimation={LinearTransition}
-              keyExtractor={(item) => item.id.toString()}
-              contentContainerStyle={styles.list}
-              ItemSeparatorComponent={() => <View style={styles.separator} />}
-              scrollEnabled={true}
-              showsHorizontalScrollIndicator={true}
-              renderItem={({ item }) => (
-                <View style={styles.row}>
-                  <View style={styles.info}>
-                    <Text style={styles.name}>
-                      Reperations nummer: {item.id}
-                    </Text>
-                    <Text style={styles.name}>
-                      Total pris: {item.totalPrice} kr
-                    </Text>
-                    <Text style={styles.name}>Oprettet: {item.createdAt.toLocaleDateString()}</Text>
+        </View>
+        <View style={{ flexDirection: 'row', flex: 1 }}>
+          <View style={{ flex: 1, gap: 16, padding: 16 }}>
+            <CreateBikeForm bike={bike} />
+          </View>
+          <View style={{ flex: 2, gap: 16, padding: 16 }}>
+            <Text>Reparation:</Text>
+            <Button onPress={() => router.push('/createRepairModal' as any)}>
+              <Text>Opret reparation</Text>
+            </Button>
+            <View>
+              <Animated.FlatList
+                data={repairs}
+                itemLayoutAnimation={LinearTransition}
+                keyExtractor={(item) => item.id.toString()}
+                contentContainerStyle={styles.list}
+                ItemSeparatorComponent={() => <View style={styles.separator} />}
+                scrollEnabled={true}
+                showsHorizontalScrollIndicator={true}
+                renderItem={({ item }) => (
+                  <View style={styles.row}>
+                    <View style={styles.info}>
+                      <Text style={styles.name}>Reperations nummer: {item.id}</Text>
+                      <Text style={styles.name}>Total pris: {item.totalPrice} kr</Text>
+                      <Text style={styles.name}>
+                        Oprettet: {item.createdAt.toLocaleDateString()}
+                      </Text>
+                    </View>
+                    <Button onPress={() => handleShowRepair(item)}>
+                      <Text>Vis</Text>
+                    </Button>
+                    <DeleteConfirmationDialog
+                      title={'Er du sikker?'}
+                      buttonTitle={'Slet'}
+                      content={`Vil du virkelig slette reperation nr ${item.id}?`}
+                      onConfirm={() => handleDelete(item.id)}
+                    />
                   </View>
-                  <Button onPress={() => handleShowRepair(item)}>
-                    <Text>Vis</Text>
-                  </Button>
-                  <DeleteConfirmationDialog
-                    title={'Er du sikker?'}
-                    buttonTitle={'Slet'}
-                    content={`Vil du virkelig slette reperation nr ${item.id}?`}
-                    onConfirm={() => handleDelete(item.id)}
-                  />
-                </View>
-              )}
-            />
+                )}
+              />
+            </View>
           </View>
         </View>
-      </View>
+      </SafeAreaView>
     </ScrollView>
   );
 }
