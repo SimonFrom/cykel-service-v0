@@ -52,7 +52,7 @@ export function RepairLinesSection({ control }: Props) {
           <Text style={[styles.headerCell, { flex: 3 }]}>Beskrivelse</Text>
           <Text style={[styles.headerCell, { flex: 1 }]}>Antal</Text>
           <Text style={[styles.headerCell, { flex: 1 }]}>Pris</Text>
-          <Text style={[styles.headerCell, { flex: 1 }]}>Total</Text>
+          <Text style={[styles.headerCell, { flex: 1 }]}>Total kr</Text>
           <View style={{ width: 40 }} />
         </View>
       )}
@@ -110,7 +110,7 @@ export function RepairLinesSection({ control }: Props) {
             </View>
 
             <View style={{ flex: 1, justifyContent: 'center' }}>
-              <Text>{lineTotal.toFixed(2)}</Text>
+              <Text>{lineTotal.toFixed(0)}</Text>
             </View>
 
             <Button
