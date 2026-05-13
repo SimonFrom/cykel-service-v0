@@ -84,15 +84,15 @@ export default function CustomerScreen({ onSuccess }: { onSuccess?: () => void }
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
+      <View>
+        <Button
+          className={'ml-auto mr-5 w-1/6'}
+          variant={'destructive'}
+          onPress={() => router.push('/customers')}>
+          <Icon as={CircleArrowLeft} className="text-primary-foreground" />
+        </Button>
+      </View>
       <ScrollView contentContainerStyle={styles.container}>
-        <View className={'flex-row-reverse items-center gap-2'}>
-          <Button
-            className={'justify-self-end'}
-            variant={'destructive'}
-            onPress={() => router.push('/customers')}>
-            <Icon as={CircleArrowLeft} className="text-primary-foreground" />
-          </Button>
-        </View>
         <View style={{ flexDirection: 'row', flex: 1 }}>
           <View style={{ flex: 1, gap: 16, padding: 16 }}>
             <View style={styles.field}>
@@ -168,7 +168,7 @@ export default function CustomerScreen({ onSuccess }: { onSuccess?: () => void }
         </View>
       </ScrollView>
       <View>
-        <Button className="mr-5 w-28" onPress={() => router.push('/createBikeModal' as any)}>
+        <Button className="ml-5 mr-5 w-28" onPress={() => router.push('/createBikeModal' as any)}>
           <Text>Opret cykel</Text>
         </Button>
         {/*TODO View for list with height*/}
