@@ -29,8 +29,10 @@ export default function BikeInfoScreen() {
   const setRepairInStore = useRepairStore((s) => s.setSelectedRepair);
 
   const fetchRepairs = async () => {
-    const repairs = await getRepairs(bike.id);
-    setRepairsInStore(repairs);
+    if (bike?.id) {
+      const repairs = await getRepairs(bike.id);
+      setRepairsInStore(repairs);
+    }
   };
 
   useFocusEffect(
