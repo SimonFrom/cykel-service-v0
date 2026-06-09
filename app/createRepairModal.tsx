@@ -1,5 +1,5 @@
 import { Repair, mockRepairs } from '@/types/repair';
-import { createRepair } from '@/crud/repairs';
+import { createRepair, updateRepair } from '@/crud/repairs';
 import { RepairLinesSection } from '@/components/ui/RepairLinesSection';
 import { useCustomerStore } from '@/store/customerStore';
 import { useBikeStore } from '@/store/bikeStore';
@@ -39,7 +39,8 @@ export default function CreateRepairForm({
   const customer = useCustomerStore((s) => s.selectedCustomer);
   const bike = useBikeStore((s) => s.selectedBike);
   const repair = useRepairStore((s) => s.selectedRepair);
-  const setSelectedRepairInStore = useRepairStore((s) => s.setSelectedRepair)
+  const setSelectedRepairInStore = useRepairStore((s) => s.setSelectedRepair);
+  const updateRepairInStore = useRepairStore((s) => s.updateRepairInStore)
 
   const {
     control,
@@ -69,18 +70,28 @@ export default function CreateRepairForm({
       console.error('Missing customer or bike');
       return;
     }
+    if (data.id == 0) {
+      try {
+        await createRepair({
+          ...data,
+          customerId: customer.id,
+          bikeId: bike.id,
+        });
 
-    try {
-      await createRepair({
-        ...data,
-        customerId: customer.id,
-        bikeId: bike.id,
-      });
-      reset();
-      onSuccess?.();
-      router.back();
-    } catch (error) {
-      console.error(error);
+      } catch (error) {
+        console.error(error);
+      }
+    } else {
+      try {
+        // TODO
+        await updateRepair(repair?.id, repair);
+      } catch (error) {
+        console.error(error);
+      } finally {
+        reset();
+        onSuccess?.();
+        router.back();
+      }
     }
   };
 
