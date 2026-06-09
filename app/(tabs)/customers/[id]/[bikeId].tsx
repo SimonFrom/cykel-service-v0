@@ -8,6 +8,7 @@ import { StyleSheet } from 'react-native';
 import { Text } from '@/components/ui/stock components/text';
 import * as React from 'react';
 import { Button } from '@/components/ui/stock components/button';
+import { Badge, badgeVariants } from '@/components/ui/badge';
 import { router, useFocusEffect } from 'expo-router';
 import { Icon } from '@/components/ui/stock components/icon';
 import { CircleArrowLeft } from 'lucide-react-native';
@@ -86,6 +87,14 @@ export default function BikeInfoScreen() {
           showsHorizontalScrollIndicator={true}
           renderItem={({ item }) => (
             <View style={styles.row}>
+              <View className='col gap-2'>
+                <Badge variant={item.paymentReceived ? 'outline' : 'destructive'}>
+                  <Text>{item.paymentReceived ? 'Betalt' : 'Ikke betalt'}</Text>
+                </Badge>
+                <Badge variant={item.complete ? 'default' : 'destructive'}>
+                  <Text>{item.complete ? 'Udleveret' : 'Ikke udleveret'}</Text>
+                </Badge>
+                </View>
               <View style={styles.info}>
                 <Text style={styles.name}>Reperations nummer: {item.id}</Text>
                 <Text style={styles.name}>Total pris: {item.totalPrice} kr</Text>

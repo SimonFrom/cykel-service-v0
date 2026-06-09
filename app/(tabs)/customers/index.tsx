@@ -71,37 +71,38 @@ export default function Screen() {
         <Image source={LOGO[colorScheme ?? 'light']} style={IMAGE_STYLE} resizeMode="contain" />
         <View className="gap-2 p-4">
           <Text className="ios:text-foreground heading font-mono text-muted-foreground">
-            Customers
+            Oprettede kunder
           </Text>
-          <FlatList
-            data={customers}
-            keyExtractor={(item: Customer) => item.id.toString()}
-            contentContainerStyle={styles.list}
-            ItemSeparatorComponent={() => <View style={styles.separator} />}
-            renderItem={({ item }) => (
-              <View style={styles.row}>
-                <View style={styles.avatar}>
-                  <Text style={styles.avatarText}>{item.firstName[0]}</Text>
+          <View className="w-80">
+            <FlatList
+              data={customers}
+              keyExtractor={(item: Customer) => item.id.toString()}
+              contentContainerStyle={styles.list}
+              ItemSeparatorComponent={() => <View style={styles.separator} />}
+              renderItem={({ item }) => (
+                <View style={styles.row}>
+                  <View style={styles.info}>
+                    <Text style={styles.name}>
+                      {item.firstName} {item.lastName}
+                    </Text>
+                    <Text style={styles.email}>{item.email}</Text>
+                    <Text style={styles.phone}>{item.phoneNumber}</Text>
+                  </View>
+                  <View className="gap-1">
+                    <Button onPress={() => handlePress(item)}>
+                      <Text>Vis</Text>
+                    </Button>
+                    <DeleteConfirmationDialog
+                      title={'Er du sikker?'}
+                      buttonTitle={'Slet kunde'}
+                      content={`Vil du virkelig slette ${item.firstName} ${item.lastName}`}
+                      onConfirm={() => handleDelete(item.id)}
+                    />
+                  </View>
                 </View>
-                <View style={styles.info}>
-                  <Text style={styles.name}>
-                    {item.firstName} {item.lastName}
-                  </Text>
-                  <Text style={styles.email}>{item.email}</Text>
-                </View>
-                <Text style={styles.phone}>{item.phoneNumber}</Text>
-                <Button onPress={() => handlePress(item)}>
-                  <Text>Vis</Text>
-                </Button>
-                <DeleteConfirmationDialog
-                  title={"Er du sikker?"}
-                  buttonTitle={"Slet kunde"}
-                  content={`Vil du virkelig slette ${item.firstName} ${item.lastName}`}
-                  onConfirm={() => handleDelete(item.id)}
-                />
-              </View>
-            )}
-          />
+              )}
+            />
+          </View>
         </View>
       </View>
     </>
@@ -131,8 +132,9 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   separator: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: '#E5E5E5',
+    height: 5,
+    backgroundColor: '#2eb789',
+    width: '100%',
   },
   row: {
     flexDirection: 'row',
