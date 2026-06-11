@@ -52,6 +52,11 @@ export default function BikeInfoScreen() {
     router.push('/createRepairModal');
   };
 
+  const handleCreateRepair = () => {
+    setRepairInStore(null);
+    router.push('/createRepairModal');
+  };
+
   if (!bike) return null;
 
   return (
@@ -74,7 +79,7 @@ export default function BikeInfoScreen() {
       </ScrollView>
 
       <View>
-        <Button className="ml-10 mr-10" onPress={() => router.push('/createRepairModal' as any)}>
+        <Button className="ml-10 mr-10" onPress={() => handleCreateRepair()}>
           <Text>Opret reparation</Text>
         </Button>
         <Animated.FlatList

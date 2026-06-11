@@ -80,11 +80,15 @@ export default function CreateRepairForm({
 
       } catch (error) {
         console.error(error);
+      } finally {
+        reset();
+        onSuccess?.();
+        router.back();
       }
     } else {
       try {
-        // TODO
-        await updateRepair(repair?.id, repair);
+        // TODO Add support for switches, somehow stil not working
+        await updateRepair(data.id, data);
       } catch (error) {
         console.error(error);
       } finally {
