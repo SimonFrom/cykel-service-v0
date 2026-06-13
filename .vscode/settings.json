@@ -1,0 +1,22 @@
+{
+  "tailwindCSS.includeLanguages": {
+    "typescript": "javascript",
+    "typescriptreact": "javascript"
+  },
+  "tailwindCSS.classAttributes": ["class", "className", "tw", "ngClass"],
+  "tailwindCSS.experimental.classRegex": [
+    ["className=\"([^\"]*)\"", "([^\\s]+)"],
+    ["className={`([^`]*)`}", "([^\\s]+)"],
+    ["tw`([^`]*)`", "([^\\s]+)"],
+    ["cn\\(([^)]*)\\)", "[\"'`]([^\"'`]*).*?[\"'`]"],
+    ["cva\\(([^)]*)\\)", "[\"'`]([^\"'`]*).*?[\"'`]"],
+    ["cx\\(([^)]*)\\)", "(?:'|\"|`)([^']*)(?:'|\"|`)"]
+  ],
+  "editor.quickSuggestions": {
+    "strings": "on"
+  },
+  "files.associations": {
+    "*.css": "tailwindcss"
+  },
+  "tailwindCSS.lint.invalidApply": "ignore"
+}

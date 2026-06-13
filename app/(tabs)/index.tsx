@@ -1,19 +1,20 @@
 import { Button } from '@/components/ui/stock components/button';
 import { Icon } from '@/components/ui/stock components/icon';
 import { Text } from '@/components/ui/stock components/text';
+import { Card } from '@/components/ui/stock components/card';
 import { Link, Stack } from 'expo-router';
-import { MoonStarIcon, StarIcon, SunIcon } from 'lucide-react-native';
+import { Car, MoonStarIcon, StarIcon, SunIcon } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import { Image, type ImageStyle, View } from 'react-native';
 
-const LOGO = {
-  light: require('@/assets/images/react-native-reusables-light.png'),
-  dark: require('@/assets/images/react-native-reusables-dark.png'),
-};
+// const LOGO = {
+//   light: require('@/assets/images/react-native-reusables-light.png'),
+//   dark: require('@/assets/images/react-native-reusables-dark.png'),
+// };
 
 const SCREEN_OPTIONS = {
-  title: 'Forside',
+  title: '',
   headerTransparent: true,
   headerRight: () => <ThemeToggle />,
 };
@@ -29,13 +30,24 @@ export default function Screen() {
   return (
     <>
       <Stack.Screen options={SCREEN_OPTIONS} />
-      <View className="flex-1 items-center justify-center gap-8 p-4">
-        <Image source={LOGO[colorScheme ?? 'light']} style={IMAGE_STYLE} resizeMode="contain" />
+      <View className="flex-1 items-center justify-start gap-8 p-4">
+        {/* <Image source={LOGO[colorScheme ?? 'light']} style={IMAGE_STYLE} resizeMode="contain" /> */}
         <View className="gap-2 p-4">
-          <Text className="ios:text-foreground heading font-mono text-muted-foreground">
-            Home
+          <Text className="ios:text-foreground heading font-mono text-primary">
+            Magtenbølle Cykelservice
           </Text>
         </View>
+      </View>
+      <View className='flex-1 gap-5 col-span-3 items-center'>
+        <Card className="p-4">
+          <Text className="text-muted-foreground font-mono">Reperationer til dato: </Text>
+        </Card>
+        <Card className="p-4">
+          <Text className="text-muted-foreground font-mono">Kunder til dato: </Text>
+        </Card>
+        <Card className="p-4">
+          <Text className="text-muted-foreground font-mono">Omsætning til dato: </Text>
+        </Card>
       </View>
     </>
   );
