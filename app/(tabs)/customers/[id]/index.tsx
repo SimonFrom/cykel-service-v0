@@ -70,17 +70,24 @@ export default function CustomerScreen({ onSuccess }: { onSuccess?: () => void }
   const handleDelete = async (id: number) => {
     await deleteBike(id);
     deleteBikeInStore(id);
-  }
+  };
 
   const handleShowBike = async (bike: Bike) => {
-    updateBikeInStore(bike)
+    updateBikeInStore(bike);
     router.push({
       pathname: '/(tabs)/customers/[id]/[bikeId]' as any,
-      params: { bikeId: bike.id }
-    })
-  }
+      params: { bikeId: bike.id },
+    });
+  };
 
-  if (!customer) return <Text>No customer in store</Text>;
+  if (!customer)
+    return (
+      <View className='items-center mt-auto mb-auto'>
+        <Text className='ios:text-foreground heading font-mono'>Ingen kunde er valgt.</Text>
+        <Text className='ios:text-foreground heading font-mono text-primary'>Start venligst forfra.</Text>      
+        <Button className="primary w-1/6" onPress={() => router.push('/customers')}>Til forsiden</Button>
+      </View>
+    );
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
