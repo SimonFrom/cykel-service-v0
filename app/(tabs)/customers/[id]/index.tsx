@@ -83,8 +83,8 @@ export default function CustomerScreen({ onSuccess }: { onSuccess?: () => void }
   if (!customer)
     return (
       <View className='items-center mt-auto mb-auto'>
-        <Text className='ios:text-foreground heading font-mono'>Ingen kunde er valgt.</Text>
-        <Text className='ios:text-foreground heading font-mono text-primary'>Start venligst forfra.</Text>      
+        <Text className='ios:text-foreground heading font-mono'>Ingen kunde er valgt</Text>
+        <Text className='ios:text-foreground heading font-mono text-primary'>Start venligst forfra</Text>      
         <Button className="primary w-1/6" onPress={() => router.push('/customers')}>Til forsiden</Button>
       </View>
     );
