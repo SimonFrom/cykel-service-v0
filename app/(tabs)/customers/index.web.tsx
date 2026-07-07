@@ -68,9 +68,9 @@ export default function Screen() {
           <Text>Opret kunde</Text>
         </Button>
       </View>
-      <ScrollView className="flex-1">
-        <View className="flex-1 items-center justify-center gap-8 p-4">
-          <Image source={LOGO[colorScheme ?? 'light']} style={IMAGE_STYLE} resizeMode="contain" />
+      <View className="flex-1 items-center justify-center gap-8 p-4">
+        <Image source={LOGO[colorScheme ?? 'light']} style={IMAGE_STYLE} resizeMode="contain" />
+        <ScrollView className="flex-1">
           <View className="gap-2 p-4">
             <Text className="ios:text-foreground heading font-mono text-muted-foreground">
               Oprettede kunder
@@ -106,8 +106,9 @@ export default function Screen() {
               />
             </View>
           </View>
-        </View >
-      </ScrollView>
+        </ScrollView>
+      </View >
+
     </>
   );
 }
@@ -132,7 +133,7 @@ function ThemeToggle() {
 }
 const styles = StyleSheet.create({
   list: {
-    padding: 16,
+    width: '100%',
 
   },
   separator: {
