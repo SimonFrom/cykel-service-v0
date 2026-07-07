@@ -68,8 +68,8 @@ export default function Screen() {
           <Text>Opret kunde</Text>
         </Button>
       </View>
-      <ScrollView className="flex-1">
-        <View className="flex-1 items-center justify-center gap-8 p-4">
+      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+        <View className="flex-1 items-center justify-center gap-8 p-4 w-full">
           <Image source={LOGO[colorScheme ?? 'light']} style={IMAGE_STYLE} resizeMode="contain" />
           <View className="gap-2 p-4">
             <Text className="ios:text-foreground heading font-mono text-muted-foreground">

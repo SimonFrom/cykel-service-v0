@@ -11,6 +11,7 @@ import { useCallback } from 'react';
 import { getCustomers, deleteCustomer } from '@/crud/customers';
 import { useCustomerStore } from '@/store/customerStore';
 import { DeleteConfirmationDialog } from '@/components/ui/deleteConfirmation';
+import { Input } from '@/components/ui/stock components/input';
 
 const LOGO = {
   light: require('@/assets/images/react-native-reusables-light.png'),
@@ -62,20 +63,23 @@ export default function Screen() {
   return (
     <>
       <Stack.Screen options={SCREEN_OPTIONS} />
-
+      <View className="gap-2 p-4 items-center">
+        <Text className="ios:text-foreground heading font-mono text-primary">
+          Magtenbølle Cykelservice
+        </Text>
+      </View>
       <View className="items-end justify-end">
         <Button className="mr-5 mt-16" onPress={() => router.push('/createCustomerModal' as any)}>
           <Text>Opret kunde</Text>
         </Button>
       </View>
-      <View className="flex-1 items-center justify-center gap-8 p-4">
-        <Image source={LOGO[colorScheme ?? 'light']} style={IMAGE_STYLE} resizeMode="contain" />
-        <ScrollView className="flex-1">
+      <View className="flex-1 flex-row w-full">
+        <ScrollView className="flex-1 w-2/3 mr-auto ml-5" showsVerticalScrollIndicator={false}>
           <View className="gap-2 p-4">
             <Text className="ios:text-foreground heading font-mono text-muted-foreground">
               Oprettede kunder
             </Text>
-            <View className="w-full">
+            <View>
               <FlatList
                 data={customers}
                 keyExtractor={(item: Customer) => item.id.toString()}
@@ -107,6 +111,12 @@ export default function Screen() {
             </View>
           </View>
         </ScrollView>
+        <View className="ml-auto mr-0 mt-5 w-1/3">
+          <Text className="ios:text-foreground heading font-mono text-muted-foreground">
+            Filtrer eller søg...
+          </Text>
+          <Input placeholder="Søg efter en kunde..." className="mr-5" />
+        </View>
       </View >
 
     </>
