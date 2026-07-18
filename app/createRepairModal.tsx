@@ -56,14 +56,15 @@ export default function CreateRepairForm({
       intakeDate: repair?.intakeDate ?? new Date(),
       deliveryDate: repair?.deliveryDate ?? new Date(),
       complete: repair?.complete ?? false,
-      items: repair?.items ?? []
+      items: repair?.items ?? [],
+      paymentReceived: repair?.paymentReceived ?? false
     },
   });
 
 
 
-  const [checkedComplete, setCheckedComplete] = useState(false);
-  const [checkedPayment, setCheckedPayment] = useState(false);
+  const [checkedComplete, setCheckedComplete] = useState(repair?.complete ?? false);
+  const [checkedPayment, setCheckedPayment] = useState(repair?.paymentReceived ?? false);
 
   const onSubmit = async (data: Repair) => {
     if (!customer?.id || !bike?.id) {
@@ -84,10 +85,10 @@ export default function CreateRepairForm({
         reset();
         onSuccess?.();
         router.back();
+        console.log(data);
       }
     } else {
       try {
-        // TODO Add support for switches, somehow stil not working
         await updateRepair(data.id, data);
       } catch (error) {
         console.error(error);
@@ -95,6 +96,7 @@ export default function CreateRepairForm({
         reset();
         onSuccess?.();
         router.back();
+        console.log(data);
       }
     }
   };
@@ -122,12 +124,12 @@ export default function CreateRepairForm({
           <Controller
             control={control}
             name="complete"
-            render={({ field: { onBlur } }) => (
+            render={({ field: { onBlur, value, onChange } }) => (
               <Switch
                 id="complete"
                 onBlur={onBlur}
-                checked={checkedComplete}
-                onCheckedChange={setCheckedComplete}
+                checked={value ?? false}
+                onCheckedChange={(checked) => {onChange(checked)}}
                 aria-labelledby="complete"
               />
             )}
@@ -136,12 +138,12 @@ export default function CreateRepairForm({
           <Controller
             control={control}
             name="paymentReceived"
-            render={({ field: { onBlur } }) => (
+            render={({ field: { onBlur, value, onChange } }) => (
               <Switch
                 id="paymentReceived"
                 onBlur={onBlur}
-                checked={checkedPayment}
-                onCheckedChange={setCheckedPayment}
+                checked={value ?? false}
+                onCheckedChange={(checked) => {onChange(checked)}}
                 aria-labelledby="paymentReceived"
               />
             )}
@@ -243,7 +245,7 @@ export default function CreateRepairForm({
 
             {/*TODO Add total price label in the table arangement*/}
             <Button className="mt-2 w-20" onPress={handleSubmit(onSubmit)}>
-              <Text>Opret</Text>
+              <Text>{repair?.id == 0 ? 'Opret' : 'Opdater'}</Text>
             </Button>
           </View>
           <View className={'flex-row-reverse items-center gap-2'}>

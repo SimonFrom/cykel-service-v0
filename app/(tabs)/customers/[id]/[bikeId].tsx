@@ -93,7 +93,8 @@ export default function BikeInfoScreen() {
             renderItem={({ item }) => (
               <View style={styles.row}>
                 <View className='col gap-2'>
-                  <Badge variant={item.paymentReceived ? 'outline' : 'destructive'}>
+                  // TODO: Switch now works, but the value is not updated in the form. Need to figure out how to fix this.
+                  <Badge variant={item.paymentReceived ? 'default' : 'destructive'}>
                     <Text>{item.paymentReceived ? 'Betalt' : 'Ikke betalt'}</Text>
                   </Badge>
                   <Badge variant={item.complete ? 'default' : 'destructive'}>

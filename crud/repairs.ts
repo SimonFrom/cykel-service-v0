@@ -110,7 +110,7 @@ export const updateRepair = async (id: number, repair: Repair) => {
       intake_date: repair.intakeDate.toISOString(),
       delivery_date: repair.deliveryDate?.toISOString() ?? null,
       complete: repair.complete,
-      payment_received: repair.paymentReceived,
+      payment_recieved: repair.paymentReceived,
       // note: createdAt is intentionally not updated
     })
     .eq('id', id);
