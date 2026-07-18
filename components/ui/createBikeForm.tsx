@@ -172,7 +172,7 @@ export function CreateBikeForm({ onSuccess, bike }: { onSuccess?: () => void; bi
         />
         {errors.type && <Text style={styles.error}>{errors.type.message}</Text>}
       </View>
-      <Button style={{ backgroundColor: 'hsl(160 60% 45%)' }} onPress={handleSubmit(onSubmit)}>
+      <Button style={{ backgroundColor: 'hsl(160 60% 45%)' }} className="ml-auto mr-5" onPress={handleSubmit(onSubmit)}>
         <Text>Gem cykel</Text>
       </Button>
     </ScrollView>

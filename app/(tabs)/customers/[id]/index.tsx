@@ -84,7 +84,7 @@ export default function CustomerScreen({ onSuccess }: { onSuccess?: () => void }
     return (
       <View className='items-center mt-auto mb-auto'>
         <Text className='ios:text-foreground heading font-mono'>Ingen kunde er valgt</Text>
-        <Text className='ios:text-foreground heading font-mono text-primary'>Start venligst forfra</Text>      
+        <Text className='ios:text-foreground heading font-mono text-primary'>Start venligst forfra</Text>
         <Button className="primary w-1/6" onPress={() => router.push('/customers')}>Til forsiden</Button>
       </View>
     );
@@ -93,87 +93,87 @@ export default function CustomerScreen({ onSuccess }: { onSuccess?: () => void }
     <SafeAreaView style={{ flex: 1 }}>
       <View>
         <Button
-          className={'ml-auto mr-5 w-1/6'}
+          className={'ml-auto mr-5 mt-5 w-15'}
           variant={'destructive'}
           onPress={() => router.push('/customers')}>
           <Icon as={CircleArrowLeft} className="text-primary-foreground" />
         </Button>
       </View>
-      <ScrollView contentContainerStyle={styles.container}>
-        <View style={{ flexDirection: 'row', flex: 1 }}>
-          <View style={{ flex: 1, gap: 16, padding: 16 }}>
-            <View style={styles.field}>
-              <Label nativeID="firstName">Fornavn</Label>
-              <Controller
-                control={control}
-                name="firstName"
-                render={({ field: { onChange, value } }) => (
-                  <Input aria-labelledby="firstName" onChangeText={onChange} value={value} />
-                )}
-              />
-            </View>
 
-            <View style={styles.field}>
-              <Label nativeID="lastName">Efternavn</Label>
-              <Controller
-                control={control}
-                name="lastName"
-                render={({ field: { onChange, value } }) => (
-                  <Input aria-labelledby="lastName" onChangeText={onChange} value={value} />
-                )}
-              />
-            </View>
-
-            <View style={styles.field}>
-              <Label nativeID="phoneNumber">Telefon</Label>
-              <Controller
-                control={control}
-                name="phoneNumber"
-                render={({ field: { onChange, value } }) => (
-                  <Input aria-labelledby="phoneNumber" onChangeText={onChange} value={value} />
-                )}
-              />
-            </View>
-
-            <View style={styles.field}>
-              <Label nativeID="email">Email</Label>
-              <Controller
-                control={control}
-                name="email"
-                render={({ field: { onChange, value } }) => (
-                  <Input aria-labelledby="email" onChangeText={onChange} value={value} />
-                )}
-              />
-            </View>
-            {customer.club && (
-              <View style={styles.field}>
-                <Label nativeID="club">Klub</Label>
-                <Controller
-                  control={control}
-                  name="club"
-                  render={({ field: { onChange, value } }) => (
-                    <Input aria-labelledby="club" onChangeText={onChange} value={value ?? ''} />
-                  )}
-                />
-              </View>
-            )}
-            <View style={styles.field}>
-              <Label nativeID="note">Noter</Label>
-              <Controller
-                control={control}
-                name="note"
-                render={({ field: { onChange, value } }) => (
-                  <Textarea aria-labelledby="note" onChangeText={onChange} value={value ?? ''} />
-                )}
-              />
-            </View>
-
-            <Button className="w-3/12" onPress={handleSubmit(onSubmit)}>
-              <Text>Gem</Text>
-            </Button>
+      <View style={{ flex: 1 }}>
+        <View style={{ flex: 1, gap: 16, padding: 16, flexDirection: 'column', width: '60%' }}>
+          <View className="flex-row gap-4 items-center">
+            <Label nativeID="firstName">Fornavn</Label>
+            <Controller
+              control={control}
+              name="firstName"
+              render={({ field: { onChange, value } }) => (
+                <Input aria-labelledby="firstName" onChangeText={onChange} value={value} />
+              )}
+            />
           </View>
+
+          <View className="flex-row gap-4 items-center">
+            <Label nativeID="lastName">Efternavn</Label>
+            <Controller
+              control={control}
+              name="lastName"
+              render={({ field: { onChange, value } }) => (
+                <Input aria-labelledby="lastName" onChangeText={onChange} value={value} />
+              )}
+            />
+          </View>
+
+          <View className="flex-row gap-4 items-center">
+            <Label nativeID="phoneNumber">Telefon</Label>
+            <Controller
+              control={control}
+              name="phoneNumber"
+              render={({ field: { onChange, value } }) => (
+                <Input aria-labelledby="phoneNumber" onChangeText={onChange} value={value} />
+              )}
+            />
+          </View>
+
+          <View className="flex-row gap-4 items-center">
+            <Label nativeID="email">Email</Label>
+            <Controller
+              control={control}
+              name="email"
+              render={({ field: { onChange, value } }) => (
+                <Input aria-labelledby="email" onChangeText={onChange} value={value} />
+              )}
+            />
+          </View>
+          {customer.club && (
+            <View className="flex-row gap-4 items-center">
+              <Label nativeID="club">Klub</Label>
+              <Controller
+                control={control}
+                name="club"
+                render={({ field: { onChange, value } }) => (
+                  <Input aria-labelledby="club" onChangeText={onChange} value={value ?? ''} />
+                )}
+              />
+            </View>
+          )}
+          <View className="flex-row gap-4 items-center">
+            <Label nativeID="note">Noter</Label>
+            <Controller
+              control={control}
+              name="note"
+              render={({ field: { onChange, value } }) => (
+                <Textarea aria-labelledby="note" onChangeText={onChange} value={value ?? ''} />
+              )}
+            />
+          </View>
+
+          <Button className="w-3/12" onPress={handleSubmit(onSubmit)}>
+            <Text>Gem</Text>
+          </Button>
         </View>
-      </ScrollView>
+      </View>
+
       <View>
         <Button className="ml-5 mr-5 w-28" onPress={() => router.push('/createBikeModal' as any)}>
           <Text>Opret cykel</Text>

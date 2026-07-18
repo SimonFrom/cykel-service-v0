@@ -63,7 +63,7 @@ export default function BikeInfoScreen() {
     <SafeAreaView style={{ flex: 1 }}>
       <View>
         <Button
-          className={'w-1/6 mr-5 ml-auto'}
+          className={'w-15 mr-5 mt-5 ml-auto'}
           variant={'destructive'}
           onPress={() => router.push('/customers/${customer.id}')}>
           <Icon as={CircleArrowLeft} className="text-primary-foreground" />
@@ -78,46 +78,46 @@ export default function BikeInfoScreen() {
         </View>
       </ScrollView>
 
-      <View>
-        <Button className="ml-10 mr-10" onPress={() => handleCreateRepair()}>
+      <View className="flex-auto">
+        <Button className="ml-5 mr-auto" onPress={() => handleCreateRepair()}>
           <Text>Opret reparation</Text>
         </Button>
-        <Animated.FlatList
-          data={repairs}
-          itemLayoutAnimation={LinearTransition}
-          keyExtractor={(item) => item.id.toString()}
-          contentContainerStyle={styles.list}
-          ItemSeparatorComponent={() => <View style={styles.separator} />}
-          scrollEnabled={true}
-          showsHorizontalScrollIndicator={true}
-          renderItem={({ item }) => (
-            <View style={styles.row}>
-              <View className='col gap-2'>
-                <Badge variant={item.paymentReceived ? 'outline' : 'destructive'}>
-                  <Text>{item.paymentReceived ? 'Betalt' : 'Ikke betalt'}</Text>
-                </Badge>
-                <Badge variant={item.complete ? 'default' : 'destructive'}>
-                  <Text>{item.complete ? 'Udleveret' : 'Ikke udleveret'}</Text>
-                </Badge>
+          <Animated.FlatList
+            data={repairs}
+            itemLayoutAnimation={LinearTransition}
+            keyExtractor={(item) => item.id.toString()}
+            contentContainerStyle={styles.list}
+            ItemSeparatorComponent={() => <View style={styles.separator} />}
+            scrollEnabled={true}
+            showsHorizontalScrollIndicator={true}
+            renderItem={({ item }) => (
+              <View style={styles.row}>
+                <View className='col gap-2'>
+                  <Badge variant={item.paymentReceived ? 'outline' : 'destructive'}>
+                    <Text>{item.paymentReceived ? 'Betalt' : 'Ikke betalt'}</Text>
+                  </Badge>
+                  <Badge variant={item.complete ? 'default' : 'destructive'}>
+                    <Text>{item.complete ? 'Udleveret' : 'Ikke udleveret'}</Text>
+                  </Badge>
                 </View>
-              <View style={styles.info}>
-                <Text style={styles.name}>Reperations nummer: {item.id}</Text>
-                <Text style={styles.name}>Total pris: {item.totalPrice} kr</Text>
-                <Text style={styles.name}>Oprettet: {item.createdAt.toLocaleDateString()}</Text>
+                <View style={styles.info}>
+                  <Text style={styles.name}>Reperations nummer: {item.id}</Text>
+                  <Text style={styles.name}>Total pris: {item.totalPrice} kr</Text>
+                  <Text style={styles.name}>Oprettet: {item.createdAt.toLocaleDateString()}</Text>
+                </View>
+                <Button onPress={() => handleShowRepair(item)}>
+                  <Text>Vis</Text>
+                </Button>
+                <DeleteConfirmationDialog
+                  title={'Er du sikker?'}
+                  buttonTitle={'Slet'}
+                  content={`Vil du virkelig slette reperation nr ${item.id}?`}
+                  onConfirm={() => handleDelete(item.id)}
+                />
               </View>
-              <Button onPress={() => handleShowRepair(item)}>
-                <Text>Vis</Text>
-              </Button>
-              <DeleteConfirmationDialog
-                title={'Er du sikker?'}
-                buttonTitle={'Slet'}
-                content={`Vil du virkelig slette reperation nr ${item.id}?`}
-                onConfirm={() => handleDelete(item.id)}
-              />
-            </View>
-          )}
-        />
-      </View>
+            )}
+          />
+        </View>
     </SafeAreaView>
   );
 }

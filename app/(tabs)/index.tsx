@@ -8,6 +8,7 @@ import { useColorScheme } from 'nativewind';
 import * as React from 'react';
 import { Image, type ImageStyle, View } from 'react-native';
 import { useCustomerStore } from '@/store/customerStore';
+import { useBikeStore } from '@/store/bikeStore';
 import { getCustomers } from '@/crud/customers';
 import { useCallback, useEffect } from 'react';
 import { Customer } from '@/types/customer';
@@ -35,6 +36,8 @@ const customers = useCustomerStore((s) => s.customers);
 const fetchCustomers = useCustomerStore((s) => s.fetchCustomers);
 const isLoading = useCustomerStore((s) => s.isLoading)
 
+
+
 useEffect(() => {
   fetchCustomers();
 }, [fetchCustomers]);
@@ -55,7 +58,7 @@ useEffect(() => {
       </View>
       <View className='grid m-3 gap-3 grid-cols-3'>
         <Card className="p-4">
-          <Text className="text-muted-foreground font-mono">Reparationer til dato: </Text>
+          <Text className="text-muted-foreground font-mono">Reparationer til dato:</Text>
         </Card>
         <Card className="p-4">
           <Text className="text-muted-foreground font-mono">Kunder til dato: {customers.length}</Text>
