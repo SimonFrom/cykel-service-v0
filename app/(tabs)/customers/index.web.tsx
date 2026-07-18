@@ -4,14 +4,16 @@ import { Text } from '@/components/ui/stock components/text';
 import { Link, router, Stack, useFocusEffect } from 'expo-router';
 import { MoonStarIcon, SunIcon } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
-import * as React from 'react';
 import { Image, type ImageStyle, View, StyleSheet, FlatList, ScrollView } from 'react-native';
+import { useState } from 'react';
+import * as React from 'react';
 import { Customer } from '@/types/customer';
 import { useCallback } from 'react';
 import { getCustomers, deleteCustomer } from '@/crud/customers';
 import { useCustomerStore } from '@/store/customerStore';
 import { DeleteConfirmationDialog } from '@/components/ui/deleteConfirmation';
 import { Input } from '@/components/ui/stock components/input';
+import { Value } from '@rn-primitives/select';
 
 const LOGO = {
   light: require('@/assets/images/react-native-reusables-light.png'),
@@ -21,7 +23,7 @@ const LOGO = {
 const SCREEN_OPTIONS = {
   title: 'Kunder',
   headerTransparent: true,
-  headerRight: () => <ThemeToggle />,
+  //headerRight: () => <ThemeToggle />,
 };
 
 const IMAGE_STYLE: ImageStyle = {
@@ -53,6 +55,26 @@ export default function Screen() {
     await deleteCustomer(id);
     deleteCustomerInStore(id);
   }
+
+  // TODO: Search doesnt work... I think...
+
+  const [query, setQuery] = useState('');
+  const [data, setData] = useState(customers);
+
+  const handleSearch = (text: string) => {
+    setQuery(text);
+    if (text) {
+      const filtered = customers.filter((item) => {
+        const itemData = item.firstName ? item.firstName.toUpperCase() : ''.toUpperCase();
+        const textData = text.toUpperCase();
+        return itemData.indexOf(textData) > -1;
+      });
+      setData(filtered);
+    } else {
+      setData(customers); // Reset to full list if search is empty
+    }
+  }
+
 
   useFocusEffect(
     useCallback(() => {
@@ -115,10 +137,13 @@ export default function Screen() {
           <Text className="ios:text-foreground heading font-mono text-muted-foreground">
             Filtrer eller søg...
           </Text>
-          <Input placeholder="Søg efter en kunde..." className="mr-5" />
+          <Input
+            placeholder="Søg efter en kundes navn..." className="mr-5"
+            onChangeText={(text) => handleSearch(text)}
+            value={query}
+          />
         </View>
       </View >
-
     </>
   );
 }
