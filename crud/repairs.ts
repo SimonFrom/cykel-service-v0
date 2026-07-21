@@ -71,7 +71,7 @@ export const createRepair = async (repair: Omit<Repair, 'id'>): Promise<number> 
       intake_date: repair.intakeDate.toISOString(),
       delivery_date: repair.deliveryDate?.toISOString() ?? null,
       complete: repair.complete,
-      payment_received: repair.paymentReceived,
+      payment_recieved: repair.paymentReceived,
     })
     .select('id')
     .single();

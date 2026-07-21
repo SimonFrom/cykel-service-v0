@@ -181,9 +181,8 @@ export default function CreateRepairForm({
                 name="createdAt"
                 render={({ field: { onChange, onBlur, value } }) => (
                   <DateSelect
-                    value={value}
+                    value={repair?.createdAt ? repair?.createdAt : value}
                     onValueChange={onChange}
-                    placeholder="Vælg afhentnings­dato"
                   />
                 )}
               />
@@ -199,7 +198,6 @@ export default function CreateRepairForm({
                   <DateSelect
                     value={value}
                     onValueChange={onChange}
-                    placeholder="Vælg afhentnings­dato"
                   />
                 )}
               />
@@ -216,7 +214,6 @@ export default function CreateRepairForm({
                   <DateSelect
                     value={value}
                     onValueChange={onChange}
-                    placeholder="Vælg afhentnings­dato"
                   />
                 )}
               />
@@ -242,10 +239,8 @@ export default function CreateRepairForm({
               />
               {errors.note && <Text style={styles.error}>{errors.note.message}</Text>}
             </View>
-
-            {/*TODO Add total price label in the table arangement*/}
             <Button className="mt-2 w-20" onPress={handleSubmit(onSubmit)}>
-              <Text>{repair?.id == 0 ? 'Opret' : 'Opdater'}</Text>
+              <Text>{repair?.items?.length ? 'Opdater' : 'Opret'}</Text>
             </Button>
           </View>
           <View className={'flex-row-reverse items-center gap-2'}>
