@@ -72,7 +72,6 @@ export default function CreateRepairForm({
       items: repair?.items ?? [],
       paymentReceived: repair?.paymentReceived ?? false,
     });
-    console.log('Repair reset to:', repair);
   }, [repair, reset]);
 
 

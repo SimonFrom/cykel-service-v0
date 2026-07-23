@@ -18,7 +18,7 @@ const mapRepairRow = (row: any, items: RepairItem[]): Repair => ({
   intakeDate: new Date(row.intake_date),
   deliveryDate: row.delivery_date ? new Date(row.delivery_date) : undefined,
   complete: row.complete,
-  paymentReceived: row.payment_received,
+  paymentReceived: row.payment_recieved,
 });
 
 const mapItemRow = (row: any): RepairItem => ({
