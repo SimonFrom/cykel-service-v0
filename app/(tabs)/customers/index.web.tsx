@@ -56,8 +56,6 @@ export default function Screen() {
     deleteCustomerInStore(id);
   }
 
-  // TODO: Search doesnt work... I think...
-
   const [query, setQuery] = useState('');
   const [data, setData] = useState(customers);
 
@@ -70,6 +68,7 @@ export default function Screen() {
         return itemData.indexOf(textData) > -1;
       });
       setData(filtered);
+      console.log('Filtered customers:', filtered);
     } else {
       setData(customers); // Reset to full list if search is empty
     }
@@ -103,7 +102,7 @@ export default function Screen() {
             </Text>
             <View>
               <FlatList
-                data={customers}
+                data={data.length > 0 ? data : customers}
                 keyExtractor={(item: Customer) => item.id.toString()}
                 contentContainerStyle={styles.list}
                 ItemSeparatorComponent={() => <View style={styles.separator} />}
