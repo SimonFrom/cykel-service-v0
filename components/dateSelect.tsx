@@ -13,11 +13,14 @@ type DateSelectProps = {
   value?: Date;
   onValueChange: (date: Date | undefined) => void;
   placeholder?: string;
-  /** How many days forward to show. Defaults to 30. */
   daysAhead?: number;
-  /** Day to start from. Defaults to today. */
   startDate?: Date;
   className?: string;
+};
+
+type Option = {
+  value: string;
+  label: string;
 };
 
 const labelFormatter = new Intl.DateTimeFormat('da-DK', {
@@ -32,14 +35,12 @@ const triggerFormatter = new Intl.DateTimeFormat('da-DK', {
   year: 'numeric',
 });
 
-/** Strips time so two Dates representing the same calendar day compare equal. */
 function startOfDay(d: Date): Date {
   const copy = new Date(d);
   copy.setHours(0, 0, 0, 0);
   return copy;
 }
 
-/** ISO key (yyyy-mm-dd) — stable string identity for a calendar day. */
 function dayKey(d: Date): string {
   return startOfDay(d).toISOString().slice(0, 10);
 }
@@ -52,14 +53,10 @@ function buildDateOptions(start: Date, days: number) {
     const date = new Date(base);
     date.setDate(base.getDate() + i);
 
-    let label = labelFormatter.format(date);
-    if (i === 0) label = `I dag · ${label}`;
-    else if (i === 1) label = `I morgen · ${label}`;
-    else if (i === 2) label = `I overmorgen · ${label}`;
+    const label = labelFormatter.format(date);
 
     options.push({ key: dayKey(date), date, label });
   }
-
   return options;
 }
 
@@ -71,22 +68,36 @@ export function DateSelect({
   startDate,
   className,
 }: DateSelectProps) {
-  // Recompute options if startDate or daysAhead changes, but otherwise stable.
+  const effectiveStartDate = React.useMemo(() => {
+    if (startDate) return startDate;
+    if (value) return startOfDay(value);
+    return startOfDay(new Date());
+  }, [startDate, value]);
+
   const options = React.useMemo(
-    () => buildDateOptions(startDate ?? new Date(), daysAhead),
-    [startDate, daysAhead]
+    () => buildDateOptions(effectiveStartDate, daysAhead),
+    [effectiveStartDate, daysAhead]
   );
 
-  const selectedKey = value ? dayKey(value) : undefined;
-  const selectedLabel = value ? triggerFormatter.format(value) : '';
+  const selectedOption = React.useMemo<Option | undefined>(() => {
+    if (!value) return undefined;
+    const key = dayKey(value);
+    const match = options.find((o) => o.key === key);
+
+    return {
+      value: key,
+      label: match ? match.label : triggerFormatter.format(value),
+    };
+  }, [options, value]);
 
   return (
     <Select
-      value={selectedKey ? { value: selectedKey, label: selectedLabel } : undefined}
+      value={selectedOption}
       onValueChange={(option) => {
         const match = options.find((o) => o.key === option?.value);
         onValueChange(match?.date);
-      }}>
+      }}
+    >
       <SelectTrigger className={`w-[220px] ${className ?? ''}`}>
         <SelectValue placeholder={placeholder} />
       </SelectTrigger>

@@ -3,7 +3,7 @@ import { createRepair, updateRepair } from '@/crud/repairs';
 import { RepairLinesSection } from '@/components/ui/RepairLinesSection';
 import { useCustomerStore } from '@/store/customerStore';
 import { useBikeStore } from '@/store/bikeStore';
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { TriggerRef } from '@rn-primitives/select';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Platform, StyleSheet, View } from 'react-native';
@@ -60,6 +60,20 @@ export default function CreateRepairForm({
       paymentReceived: repair?.paymentReceived ?? false
     },
   });
+
+  useEffect(() => {
+    reset({
+      id: repair?.id ?? 0,
+      note: repair?.note ?? '',
+      createdAt: repair?.createdAt ? new Date(repair.createdAt) : new Date(),
+      intakeDate: repair?.intakeDate ? new Date(repair.intakeDate) : new Date(),
+      deliveryDate: repair?.deliveryDate ? new Date(repair.deliveryDate) : new Date(),
+      complete: repair?.complete ?? false,
+      items: repair?.items ?? [],
+      paymentReceived: repair?.paymentReceived ?? false,
+    });
+    console.log('Repair reset to:', repair);
+  }, [repair, reset]);
 
 
 
@@ -179,10 +193,12 @@ export default function CreateRepairForm({
               <Controller
                 control={control}
                 name="createdAt"
+                defaultValue={new Date()}
                 render={({ field: { onChange, onBlur, value } }) => (
                   <DateSelect
-                    value={repair?.createdAt ? repair?.createdAt : value}
+                    value={value ?? new Date()}
                     onValueChange={onChange}
+                    
                   />
                 )}
               />
@@ -194,9 +210,10 @@ export default function CreateRepairForm({
               <Controller
                 control={control}
                 name="intakeDate"
+                defaultValue={new Date()}
                 render={({ field: { onChange, onBlur, value } }) => (
                   <DateSelect
-                    value={value}
+                    value={value ?? new Date()}
                     onValueChange={onChange}
                   />
                 )}
@@ -210,9 +227,10 @@ export default function CreateRepairForm({
               <Controller
                 control={control}
                 name="deliveryDate"
+                defaultValue={new Date()}
                 render={({ field: { onChange, onBlur, value } }) => (
                   <DateSelect
-                    value={value}
+                    value={value ?? new Date()}
                     onValueChange={onChange}
                   />
                 )}
