@@ -37,15 +37,25 @@ export const getCustomer = async (id:number): Promise<Customer | null> => {
 }
 
 export const createCustomer = async (customer: Omit<Customer, 'id'>) => {
-  const { error } = await supabase.from('customers').insert({
+    const { data, error } = await supabase.from('customers').insert({
     first_name: customer.firstName,
     last_name: customer.lastName,
     email: customer.email,
     phone_number: customer.phoneNumber,
     club: customer.club || null,
-  });
+    }).select('*').single();
 
   if (error) throw error;
+
+    return {
+        id: data.id,
+        firstName: data.first_name,
+        lastName: data.last_name,
+        email: data.email,
+        phoneNumber: data.phone_number,
+        club: data.club ?? undefined,
+        note: data.note ?? undefined,
+    } satisfies Customer;
 };
 
 export const deleteCustomer = async (id: number) => {

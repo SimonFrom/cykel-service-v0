@@ -33,6 +33,7 @@ export function CreateBikeForm({ onSuccess, bike }: { onSuccess?: () => void; bi
   const customer = useCustomerStore((s) => s.selectedCustomer);
   const bikes = useBikeStore((s) => s.bikes);
   const setBikesInStore = useBikeStore((s) => s.setBikesInStore);
+  const updateBikeInStore = useBikeStore((s) => s.updateBikeInStore);
 
   // Select props
   const ref = useRef<TriggerRef>(null);
@@ -70,8 +71,12 @@ export function CreateBikeForm({ onSuccess, bike }: { onSuccess?: () => void; bi
       if (!bike) {
         data.customerId = customerId;
         console.log("create")
-        await createBike(data);
-        router.back()
+        const created = await createBike(data);
+        updateBikeInStore(created);
+        router.replace({
+          pathname: '/customers/[id]/[bikeId]',
+          params: { id: String(customerId), bikeId: String(created.id) },
+        });
       } else {
         console.log("update")
         await updateBike(data);

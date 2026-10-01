@@ -23,7 +23,7 @@ export default function CreateCustomerModal({ onSuccess }: { onSuccess?: () => v
     handleSubmit,
     reset,
     formState: { errors },
-  } = useForm<Customer>({
+  } = useForm<FormData>({
     defaultValues: {
       firstName: '',
       lastName: '',
@@ -33,14 +33,17 @@ export default function CreateCustomerModal({ onSuccess }: { onSuccess?: () => v
     },
   });
 
-  const onSubmit = async (data: Customer) => {
+  const onSubmit = async (data: FormData) => {
     try {
       setIsLoading(true);
-      await createCustomer(data);
-      updateCustomerInStore(data);
+      const customer = await createCustomer(data);
+      updateCustomerInStore(customer);
       reset();
       onSuccess?.();
-      router.back();
+      router.replace({
+        pathname: '/customers/[id]',
+        params: { id: String(customer.id) },
+      });
     } catch (e) {
       console.error(e);
     } finally {

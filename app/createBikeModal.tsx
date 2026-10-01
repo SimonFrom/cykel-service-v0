@@ -64,11 +64,14 @@ export default function CreateBikeModal({ onSuccess }: { onSuccess?: () => void 
     try {
       data.customerId = customerId;
       console.log('inserting bike:', data);
-      await createBike(data);
-      updateBikeInStore(data);
+      const bike = await createBike(data);
+      updateBikeInStore(bike);
       reset();
       onSuccess?.();
-      router.back();
+      router.replace({
+        pathname: '/customers/[id]/[bikeId]',
+        params: { id: String(customerId), bikeId: String(bike.id) },
+      });
     } catch (e) {
       console.error('onSubmit error:', JSON.stringify(e, null, 2));
     }

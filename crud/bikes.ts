@@ -27,18 +27,27 @@ export const deleteBike = async (id: number) => {
 };
 
 export const createBike = async (bike: Bike) => {
-  const { error } = await supabase.from('bikes').insert({
+  const { data, error } = await supabase.from('bikes').insert({
     customer_id: bike.customerId,
     make: bike.make,
     model: bike.model,
     colour: bike.colour,
     type: bike.type,
-  });
+  }).select('*').single();
 
   if (error) {
     console.error('createBike error:', JSON.stringify(error, null, 2));
     throw error;
   }
+
+  return {
+    id: data.id,
+    customerId: data.customer_id,
+    make: data.make,
+    model: data.model,
+    colour: data.colour,
+    type: data.type,
+  } satisfies Bike;
 };
 
 export const updateBike = async (bike: Bike) => {

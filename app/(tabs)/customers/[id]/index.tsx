@@ -60,7 +60,10 @@ export default function CustomerScreen({ onSuccess }: { onSuccess?: () => void }
       await updateCustomer(data.id, data);
       updateCustomerInStore(data);
       reset();
-      router.back();
+      router.replace({
+        pathname: '/customers/[id]/[bikeId]' as any,
+        params: { id: String(customer?.id), bikeId: String(bikes[0]?.id ?? 0) },
+      });
       onSuccess?.();
     } catch (e) {
       console.error(e);
@@ -76,7 +79,7 @@ export default function CustomerScreen({ onSuccess }: { onSuccess?: () => void }
     updateBikeInStore(bike);
     router.push({
       pathname: '/(tabs)/customers/[id]/[bikeId]' as any,
-      params: { bikeId: bike.id },
+      params: { id: String(customer?.id), bikeId: bike.id },
     });
   };
 

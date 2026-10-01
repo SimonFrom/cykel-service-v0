@@ -33,7 +33,9 @@ export const useCustomerStore = create<CustomerStore>((set) => ({
   setCustomersInStore: (customers) => set({customers}),
   updateCustomerInStore: (updated) => set((state) => ({
     selectedCustomer: updated,
-    customers: state.customers.map((c) => c.id === updated.id ? updated : c),
+    customers: state.customers.some((c) => c.id === updated.id)
+      ? state.customers.map((c) => c.id === updated.id ? updated : c)
+      : [...state.customers, updated],
   })),
   deleteCustomerInStore: (id) => set((state) => ({
     customers: state.customers.filter((c) => c.id.toString() !== id.toString()),
