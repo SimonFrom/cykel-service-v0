@@ -1,4 +1,4 @@
-import { Repair, mockRepairs } from '@/types/repair';
+import { Repair } from '@/types/repair';
 import { createRepair, updateRepair } from '@/crud/repairs';
 import { RepairLinesSection } from '@/components/ui/RepairLinesSection';
 import { useCustomerStore } from '@/store/customerStore';
@@ -57,7 +57,8 @@ export default function CreateRepairForm({
       deliveryDate: repair?.deliveryDate ?? new Date(),
       complete: repair?.complete ?? false,
       items: repair?.items ?? [],
-      paymentReceived: repair?.paymentReceived ?? false
+      paymentReceived: repair?.paymentReceived ?? false,
+      customerContacted: repair?.customerContacted ?? false,
     },
   });
 
@@ -71,6 +72,7 @@ export default function CreateRepairForm({
       complete: repair?.complete ?? false,
       items: repair?.items ?? [],
       paymentReceived: repair?.paymentReceived ?? false,
+      customerContacted: repair?.customerContacted ?? false,
     });
   }, [repair, reset]);
 
@@ -158,6 +160,20 @@ export default function CreateRepairForm({
                 checked={value ?? false}
                 onCheckedChange={(checked) => {onChange(checked)}}
                 aria-labelledby="paymentReceived"
+              />
+            )}
+          />
+          <Label nativeID="customerContacted">Kunde kontaktet:</Label>
+          <Controller
+            control={control}
+            name="customerContacted"
+            render={({ field: { onBlur, value, onChange } }) => (
+              <Switch
+                id="customerContacted"
+                onBlur={onBlur}
+                checked={value ?? false}
+                onCheckedChange={(checked) => {onChange(checked)}}
+                aria-labelledby="customerContacted"
               />
             )}
           />

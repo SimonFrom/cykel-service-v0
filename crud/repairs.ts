@@ -19,6 +19,7 @@ const mapRepairRow = (row: any, items: RepairItem[]): Repair => ({
   deliveryDate: row.delivery_date ? new Date(row.delivery_date) : undefined,
   complete: row.complete,
   paymentReceived: row.payment_recieved,
+  customerContacted: row.customerContacted,
 });
 
 const mapItemRow = (row: any): RepairItem => ({
@@ -72,6 +73,7 @@ export const createRepair = async (repair: Omit<Repair, 'id'>): Promise<number> 
       delivery_date: repair.deliveryDate?.toISOString() ?? null,
       complete: repair.complete,
       payment_recieved: repair.paymentReceived,
+      customerContacted: repair.customerContacted,
     })
     .select('id')
     .single();
@@ -111,6 +113,7 @@ export const updateRepair = async (id: number, repair: Repair) => {
       delivery_date: repair.deliveryDate?.toISOString() ?? null,
       complete: repair.complete,
       payment_recieved: repair.paymentReceived,
+      customerContacted: repair.customerContacted,
       // note: createdAt is intentionally not updated
     })
     .eq('id', id);
