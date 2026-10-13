@@ -1,6 +1,7 @@
 import { Text } from '@/components/ui/stock components/text';
 import { Button } from '@/components/ui/stock components/button';
 import { useCustomerStore } from '@/store/customerStore';
+import { useRouter } from 'expo-router';
 import { Repair } from '@/types/repair';
 import { useBikeStore } from '@/store/bikeStore';
 import { Customer } from '@/types/customer';
@@ -9,7 +10,18 @@ import { Card, CardDescription, CardTitle, CardContent, CardHeader, CardFooter }
 
 export default function RecentRepairCard({ repair, customer, bike }: { repair: Repair, customer?: Customer, bike?: Bike }) {
 
+  const setSelectedBike = useBikeStore((s) => s.setSelectedBike);
 
+  const handlePress = (bike: Bike) => {
+      setSelectedBike(bike);
+      router.push({
+        pathname: '/customers/[id]/[bikeId]',
+        params: { id: String(customer?.id), bikeId: String(bike.id) },
+      });
+    };
+  
+
+  const router = useRouter();
   return (
     <Card className="w-72 h-80">
       <CardHeader>
@@ -25,7 +37,7 @@ export default function RecentRepairCard({ repair, customer, bike }: { repair: R
       <Text className="text-md font-semibold font-mono">Pris: {repair.totalPrice} kr.</Text>
       </CardContent>
       <CardFooter className="flex flex-start gap-1">
-        <Button className="" onPress={() => { /* Handle button press */ }}>
+        <Button className="" onPress={() => handlePress(bike!)}>
             <Text>Vis</Text>
         </Button>
       </CardFooter>
