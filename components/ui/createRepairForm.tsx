@@ -39,7 +39,7 @@ export default function CreateRepairForm({
       id: repair?.id ?? 0,
       customerId: repair?.customerId ?? 0,
       bikeId: repair?.bikeId ?? 0,
-      note: repair?.note ?? [],
+      note: repair?.note ?? '',
       createdAt: repair?.createdAt ?? new Date(),
       intakeDate: repair?.intakeDate ?? new Date(),
       deliveryDate: repair?.deliveryDate ?? new Date(),

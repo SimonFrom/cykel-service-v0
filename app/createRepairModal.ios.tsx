@@ -1,4 +1,4 @@
-import { Repair, mockRepairs } from '@/types/repair';
+import { Repair } from '@/types/repair';
 import { createRepair } from '@/crud/repairs';
 import { RepairLinesSection } from '@/components/ui/RepairLinesSection';
 import { useCustomerStore } from '@/store/customerStore';
