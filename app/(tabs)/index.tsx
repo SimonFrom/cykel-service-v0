@@ -9,9 +9,11 @@ import * as React from 'react';
 import { Image, type ImageStyle, View } from 'react-native';
 import { useCustomerStore } from '@/store/customerStore';
 import { useBikeStore } from '@/store/bikeStore';
+import { useRepairStore } from '@/store/repairStore';
 import { getCustomers } from '@/crud/customers';
 import { useCallback, useEffect } from 'react';
 import { Customer } from '@/types/customer';
+import RecentRepairCard from '@/components/ui/recentRepairCard';
 
 // const LOGO = {
 //   light: require('@/assets/images/react-native-reusables-light.png'),
@@ -34,13 +36,16 @@ export default function Screen() {
 
 const customers = useCustomerStore((s) => s.customers);
 const fetchCustomers = useCustomerStore((s) => s.fetchCustomers);
+const repairs = useRepairStore((s) => s.repairs);
+const fetchRepairs = useRepairStore((s) => s.fetchRepairs);
 const isLoading = useCustomerStore((s) => s.isLoading)
 
 
 
 useEffect(() => {
   fetchCustomers();
-}, [fetchCustomers]);
+  fetchRepairs();
+}, [fetchCustomers, fetchRepairs]);
 
   const { colorScheme } = useColorScheme();
 
@@ -66,6 +71,11 @@ useEffect(() => {
         <Card className="p-4">
           <Text className="text-muted-foreground font-mono">Omsætning til dato: </Text>
         </Card>
+        {repairs.length > 0 && (
+          <View className="">
+            <RecentRepairCard repair={repairs[0]} />
+          </View>
+        )}
       </View>
     </>
   );

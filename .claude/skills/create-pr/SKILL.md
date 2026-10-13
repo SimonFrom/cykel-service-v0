@@ -58,8 +58,6 @@ Read `git log origin/main..HEAD` and `git diff origin/main...HEAD`. Check agains
 
 ## Needs attention
 <packages added, schema changes, auth/RLS changes, review findings from step 3 — or "None">
-
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
 ```
 
 Write in English. Keep it short and concrete.
