@@ -6,7 +6,7 @@ import { Link, Stack, useFocusEffect } from 'expo-router';
 import { Car, MoonStarIcon, StarIcon, SunIcon } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import * as React from 'react';
-import { Image, type ImageStyle, View } from 'react-native';
+import { Image, type ImageStyle, ScrollView, View } from 'react-native';
 import { useCustomerStore } from '@/store/customerStore';
 import { useBikeStore } from '@/store/bikeStore';
 import { useRepairStore } from '@/store/repairStore';
@@ -38,6 +38,10 @@ const customers = useCustomerStore((s) => s.customers);
 const fetchCustomers = useCustomerStore((s) => s.fetchCustomers);
 const repairs = useRepairStore((s) => s.repairs);
 const fetchRepairs = useRepairStore((s) => s.fetchRepairs);
+const bikes = useBikeStore((s) => s.bikes);
+const fetchBikes = useBikeStore((s) => s.fetchAllBikes);
+
+
 const isLoading = useCustomerStore((s) => s.isLoading)
 
 
@@ -45,7 +49,8 @@ const isLoading = useCustomerStore((s) => s.isLoading)
 useEffect(() => {
   fetchCustomers();
   fetchRepairs();
-}, [fetchCustomers, fetchRepairs]);
+  fetchBikes();
+}, [fetchCustomers, fetchRepairs, fetchBikes]);
 
   const { colorScheme } = useColorScheme();
 
@@ -72,9 +77,19 @@ useEffect(() => {
           <Text className="text-muted-foreground font-mono">Omsætning til dato: </Text>
         </Card>
         {repairs.length > 0 && (
-          <View className="">
-            <RecentRepairCard repair={repairs[0]} />
-          </View>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator
+            className="col-span-3"
+            contentContainerClassName="flex-row items-center gap-4 pb-2">
+            {[...repairs].sort((a, b) => b.id - a.id).slice(0, 10).map((repair) => (
+              <RecentRepairCard 
+                key={repair.id} 
+                repair={repair} 
+                customer={customers.find(c => c.id === repair.customerId)} 
+                bike={bikes.find(b => b.id === repair.bikeId)} />
+            ))}
+          </ScrollView>
         )}
       </View>
     </>
