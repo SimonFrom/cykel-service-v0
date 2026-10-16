@@ -1,48 +1,93 @@
+import { CustomerListItem } from '@/components/ui/customerListItem';
 import { Button } from '@/components/ui/stock components/button';
 import { Icon } from '@/components/ui/stock components/icon';
-import { Text } from '@/components/ui/stock components/text';
-import { Link, router, Stack, useFocusEffect } from 'expo-router';
-import { MoonStarIcon, SunIcon } from 'lucide-react-native';
-import { useColorScheme } from 'nativewind';
-import { Image, type ImageStyle, View, StyleSheet, FlatList, ScrollView } from 'react-native';
-import { useState } from 'react';
-import * as React from 'react';
-import { Customer } from '@/types/customer';
-import { useCallback } from 'react';
-import { getCustomers, deleteCustomer } from '@/crud/customers';
-import { useCustomerStore } from '@/store/customerStore';
-import { DeleteConfirmationDialog } from '@/components/ui/deleteConfirmation';
 import { Input } from '@/components/ui/stock components/input';
-import { Value } from '@rn-primitives/select';
-
-const LOGO = {
-  light: require('@/assets/images/react-native-reusables-light.png'),
-  dark: require('@/assets/images/react-native-reusables-dark.png'),
-};
+import { Text } from '@/components/ui/stock components/text';
+import { deleteCustomer } from '@/crud/customers';
+import { useCustomerStore } from '@/store/customerStore';
+import { Customer } from '@/types/customer';
+import { router, Stack, useFocusEffect } from 'expo-router';
+import { cn } from '@/lib/utils';
+import { ArrowDown, ArrowUp, ArrowUpDown, Plus, Search, Users, X } from 'lucide-react-native';
+import * as React from 'react';
+import { useCallback, useMemo, useState } from 'react';
+import { ActivityIndicator, Pressable, ScrollView, View } from 'react-native';
 
 const SCREEN_OPTIONS = {
   title: 'Kunder',
-  headerTransparent: true,
-  //headerRight: () => <ThemeToggle />,
 };
 
-const IMAGE_STYLE: ImageStyle = {
-  height: 76,
-  width: 76,
+// Case-insensitive match on name, email, phone and club.
+function matchesQuery(customer: Customer, query: string) {
+  const haystack = [
+    customer.firstName,
+    customer.lastName,
+    customer.email,
+    customer.phoneNumber,
+    customer.club,
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
+  return query
+    .toLowerCase()
+    .split(/\s+/)
+    .every((term) => haystack.includes(term));
+}
+
+type SortKey = 'name' | 'email' | 'phone';
+type SortState = { key: SortKey; direction: 'asc' | 'desc' };
+
+const SORT_VALUE: Record<SortKey, (customer: Customer) => string> = {
+  name: (c) => `${c.firstName} ${c.lastName}`,
+  email: (c) => c.email ?? '',
+  phone: (c) => c.phoneNumber ?? '',
 };
+
+function compareText(a: string, b: string) {
+  return a.localeCompare(b, 'da', { numeric: true, sensitivity: 'base' });
+}
+
+// Sorts by the given column; customers missing the value always go last, ties fall back to name.
+function compareCustomers(a: Customer, b: Customer, { key, direction }: SortState) {
+  const valueA = SORT_VALUE[key](a).trim();
+  const valueB = SORT_VALUE[key](b).trim();
+  if (!valueA !== !valueB) return valueA ? -1 : 1;
+  const result = direction === 'asc' ? compareText(valueA, valueB) : compareText(valueB, valueA);
+  return result || compareText(SORT_VALUE.name(a), SORT_VALUE.name(b));
+}
 
 export default function Screen() {
-  const { colorScheme } = useColorScheme();
-
-  const customers = useCustomerStore(s => s.customers);
-  const fetchCustomers = async () => {
-    const customers = await getCustomers();
-    setCustomersInStore(customers);
-  };
-
-  const setSelectedCustomer = useCustomerStore(s => s.setSelectedCustomer);
-  const setCustomersInStore = useCustomerStore(s => s.setCustomersInStore);
+  const customers = useCustomerStore((s) => s.customers);
+  const isLoading = useCustomerStore((s) => s.isLoading);
+  const error = useCustomerStore((s) => s.error);
+  const fetchCustomers = useCustomerStore((s) => s.fetchCustomers);
+  const setSelectedCustomer = useCustomerStore((s) => s.setSelectedCustomer);
   const deleteCustomerInStore = useCustomerStore((s) => s.deleteCustomerInStore);
+
+  const [query, setQuery] = useState('');
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [sort, setSort] = useState<SortState>({ key: 'name', direction: 'asc' });
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchCustomers();
+    }, [fetchCustomers])
+  );
+
+  const filteredCustomers = useMemo(() => {
+    const trimmed = query.trim();
+    const list = trimmed ? customers.filter((c) => matchesQuery(c, trimmed)) : customers;
+    return [...list].sort((a, b) => compareCustomers(a, b, sort));
+  }, [customers, query, sort]);
+
+  // Pressing the active column flips direction; a new column starts ascending.
+  const handleSort = (key: SortKey) =>
+    setSort((prev) => ({
+      key,
+      direction: prev.key === key && prev.direction === 'asc' ? 'desc' : 'asc',
+    }));
+
   const handlePress = (customer: Customer) => {
     setSelectedCustomer(customer);
     router.push({
@@ -51,163 +96,213 @@ export default function Screen() {
     });
   };
 
-  const handleDelete = async (id: number) => {
-    await deleteCustomer(id);
-    deleteCustomerInStore(id);
-  }
-
-  const [query, setQuery] = useState('');
-  const [data, setData] = useState(customers);
-
-  const handleSearch = (text: string) => {
-    setQuery(text);
-    if (text) {
-      const filtered = customers.filter((item) => {
-        const itemData = item.firstName ? item.firstName.toUpperCase() : ''.toUpperCase();
-        const textData = text.toUpperCase();
-        return itemData.indexOf(textData) > -1;
-      });
-      setData(filtered);
-      console.log('Filtered customers:', filtered);
-    } else {
-      setData(customers); // Reset to full list if search is empty
+  const handleDelete = async (customer: Customer) => {
+    try {
+      setDeleteError(null);
+      await deleteCustomer(customer.id);
+      deleteCustomerInStore(customer.id);
+    } catch (e) {
+      // 23503 = foreign key violation: the customer still has bikes.
+      const isReferenced = (e as { code?: string }).code === '23503';
+      setDeleteError(
+        isReferenced
+          ? `${customer.firstName} ${customer.lastName} har cykler registreret. Slet cyklerne først.`
+          : (e as Error).message
+      );
     }
-  }
+  };
 
-
-  useFocusEffect(
-    useCallback(() => {
-      fetchCustomers();
-    }, [])
-  );
+  const openCreateCustomer = () => router.push('/createCustomerModal' as never);
 
   return (
     <>
       <Stack.Screen options={SCREEN_OPTIONS} />
-      <View className="gap-2 p-4 items-center">
-        <Text className="ios:text-foreground heading font-mono text-primary">
-          Magtenbølle Cykelservice
-        </Text>
-      </View>
-      <View className="items-end justify-end">
-        <Button className="mr-5 mt-16" onPress={() => router.push('/createCustomerModal' as any)}>
-          <Text>Opret kunde</Text>
-        </Button>
-      </View>
-      <View className="flex-1 flex-row w-full">
-        <ScrollView className="flex-1 w-2/3 mr-auto ml-5" showsVerticalScrollIndicator={false}>
-          <View className="gap-2 p-4">
-            <Text className="ios:text-foreground heading font-mono text-muted-foreground">
-              Oprettede kunder
-            </Text>
-            <View>
-              <FlatList
-                data={data.length > 0 ? data : customers}
-                keyExtractor={(item: Customer) => item.id.toString()}
-                contentContainerStyle={styles.list}
-                ItemSeparatorComponent={() => <View style={styles.separator} />}
-                renderItem={({ item }) => (
-                  <View style={styles.row}>
-                    <View style={styles.info}>
-                      <Text style={styles.name}>
-                        {item.firstName} {item.lastName}
-                      </Text>
-                      <Text style={styles.email}>{item.email}</Text>
-                      <Text style={styles.phone}>{item.phoneNumber}</Text>
-                    </View>
-                    <View className="gap-1">
-                      <Button onPress={() => handlePress(item)}>
-                        <Text>Vis</Text>
-                      </Button>
-                      <DeleteConfirmationDialog
-                        title={'Er du sikker?'}
-                        buttonTitle={'Slet kunde'}
-                        content={`Vil du virkelig slette ${item.firstName} ${item.lastName}`}
-                        onConfirm={() => handleDelete(item.id)}
-                      />
-                    </View>
-                  </View>
-                )}
-              />
+      <ScrollView className="flex-1 bg-background" contentContainerClassName="p-4 md:p-8">
+        <View className="mx-auto w-full max-w-5xl gap-6">
+          <View className="flex-row flex-wrap items-end justify-between gap-4">
+            <View className="gap-1">
+              <Text className="text-xs font-semibold uppercase tracking-wider text-primary">
+                Magtenbølle Cykelservice
+              </Text>
+              <Text className="text-3xl font-bold tracking-tight">Kunder</Text>
+              <Text variant="muted">
+                {customers.length} {customers.length === 1 ? 'kunde' : 'kunder'} i alt
+              </Text>
             </View>
+            <Button onPress={openCreateCustomer}>
+              <Icon as={Plus} size={16} className="text-primary-foreground" />
+              <Text>Opret kunde</Text>
+            </Button>
           </View>
-        </ScrollView>
-        <View className="ml-auto mr-0 mt-5 w-1/3">
-          <Text className="ios:text-foreground heading font-mono text-muted-foreground">
-            Filtrer eller søg...
-          </Text>
-          <Input
-            placeholder="Søg efter en kundes navn..." className="mr-5"
-            onChangeText={(text) => handleSearch(text)}
-            value={query}
-          />
+
+          <View className="relative justify-center">
+            <Icon
+              as={Search}
+              size={16}
+              className="pointer-events-none absolute left-3 z-10 text-muted-foreground"
+            />
+            <Input
+              placeholder="Søg på navn, email, telefon eller klub…"
+              className="pl-9 pr-9"
+              value={query}
+              onChangeText={setQuery}
+            />
+            {query ? (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute right-0.5 size-8 sm:size-8"
+                accessibilityLabel="Ryd søgning"
+                onPress={() => setQuery('')}>
+                <Icon as={X} size={14} className="text-muted-foreground" />
+              </Button>
+            ) : null}
+          </View>
+
+          {error || deleteError ? (
+            <View className="rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3">
+              <Text className="text-sm text-destructive">
+                {deleteError ? 'Kunden kunne ikke slettes: ' : 'Kunderne kunne ikke hentes: '}
+                {deleteError ?? error}
+              </Text>
+            </View>
+          ) : null}
+
+          <View className="overflow-hidden rounded-xl border border-border bg-card shadow-sm shadow-black/5">
+            <View className="hidden flex-row items-center gap-4 border-b border-border bg-muted/40 px-4 py-2 md:flex">
+              <View className="w-10" />
+              <View className="flex-1 flex-row gap-6">
+                <SortHeader
+                  label="Navn"
+                  column="name"
+                  sort={sort}
+                  onSort={handleSort}
+                  className="w-1/3"
+                />
+                <SortHeader
+                  label="Email"
+                  column="email"
+                  sort={sort}
+                  onSort={handleSort}
+                  className="flex-1"
+                />
+                <SortHeader
+                  label="Telefon"
+                  column="phone"
+                  sort={sort}
+                  onSort={handleSort}
+                  className="w-36"
+                />
+              </View>
+              <View className="w-[58px]" />
+            </View>
+
+            {isLoading && customers.length === 0 ? (
+              <View className="items-center py-16">
+                <ActivityIndicator />
+              </View>
+            ) : filteredCustomers.length === 0 ? (
+              <EmptyState
+                hasCustomers={customers.length > 0}
+                query={query}
+                onCreate={openCreateCustomer}
+              />
+            ) : (
+              filteredCustomers.map((customer, index) => (
+                <CustomerListItem
+                  key={customer.id}
+                  customer={customer}
+                  isLast={index === filteredCustomers.length - 1}
+                  onPress={handlePress}
+                  onDelete={handleDelete}
+                />
+              ))
+            )}
+          </View>
+
+          {query && filteredCustomers.length > 0 ? (
+            <Text variant="muted" className="text-center">
+              Viser {filteredCustomers.length} af {customers.length}
+            </Text>
+          ) : null}
         </View>
-      </View >
+      </ScrollView>
     </>
   );
 }
 
-const THEME_ICONS = {
-  light: SunIcon,
-  dark: MoonStarIcon,
-};
-
-function ThemeToggle() {
-  const { colorScheme, toggleColorScheme } = useColorScheme();
+// Pressable column header that shows the current sort direction.
+function SortHeader({
+  label,
+  column,
+  sort,
+  onSort,
+  className,
+}: {
+  label: string;
+  column: SortKey;
+  sort: SortState;
+  onSort: (key: SortKey) => void;
+  className?: string;
+}) {
+  const isActive = sort.key === column;
+  const SortIcon = !isActive ? ArrowUpDown : sort.direction === 'asc' ? ArrowUp : ArrowDown;
 
   return (
-    <Button
-      onPressIn={toggleColorScheme}
-      size="icon"
-      variant="ghost"
-      className="ios:size-9 rounded-full web:mx-4">
-      <Icon as={THEME_ICONS[colorScheme ?? 'light']} className="size-5" />
-    </Button>
+    <Pressable
+      onPress={() => onSort(column)}
+      accessibilityRole="button"
+      accessibilityLabel={`Sortér efter ${label.toLowerCase()}`}
+      className={cn('group flex-row items-center gap-1 self-start', className)}>
+      <Text
+        className={cn(
+          'text-xs font-medium uppercase text-muted-foreground web:group-hover:text-foreground',
+          isActive && 'text-foreground'
+        )}>
+        {label}
+      </Text>
+      <Icon
+        as={SortIcon}
+        size={12}
+        className={cn(
+          'text-muted-foreground opacity-40 web:group-hover:opacity-100',
+          isActive && 'text-foreground opacity-100'
+        )}
+      />
+    </Pressable>
   );
 }
-const styles = StyleSheet.create({
-  list: {
-    width: '100%',
 
-  },
-  separator: {
-    height: 5,
-    backgroundColor: '#2eb789',
-    width: '100%',
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-    gap: 12,
-  },
-  avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#EEEDFE',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarText: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: 'orange',
-  },
-  info: {
-    flex: 1,
-  },
-  name: {
-    fontSize: 15,
-    fontWeight: '500',
-  },
-  email: {
-    fontSize: 13,
-    color: '#888',
-    marginTop: 1,
-  },
-  phone: {
-    fontSize: 13,
-    color: '#888',
-  },
-});
+// Shown when there are no customers at all, or none matching the search.
+function EmptyState({
+  hasCustomers,
+  query,
+  onCreate,
+}: {
+  hasCustomers: boolean;
+  query: string;
+  onCreate: () => void;
+}) {
+  return (
+    <View className="items-center gap-3 px-4 py-16">
+      <View className="size-12 items-center justify-center rounded-full bg-muted">
+        <Icon as={hasCustomers ? Search : Users} size={20} className="text-muted-foreground" />
+      </View>
+      {hasCustomers ? (
+        <>
+          <Text className="font-medium">Ingen kunder matcher “{query.trim()}”</Text>
+          <Text variant="muted">Prøv et andet navn, en email eller et telefonnummer.</Text>
+        </>
+      ) : (
+        <>
+          <Text className="font-medium">Ingen kunder endnu</Text>
+          <Text variant="muted">Opret din første kunde for at komme i gang.</Text>
+          <Button variant="outline" className="mt-2" onPress={onCreate}>
+            <Icon as={Plus} size={16} />
+            <Text>Opret kunde</Text>
+          </Button>
+        </>
+      )}
+    </View>
+  );
+}
