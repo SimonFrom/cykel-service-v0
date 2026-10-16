@@ -59,11 +59,11 @@ export const createCustomer = async (customer: Omit<Customer, 'id'>) => {
 };
 
 export const deleteCustomer = async (id: number) => {
-    const {data, error} = await supabase
+    const { error } = await supabase
         .from('customers').delete()
         .eq('id', id)
 
-    if (error) return error;
+    if (error) throw error;
 
 }
 
