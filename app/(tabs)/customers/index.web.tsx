@@ -102,7 +102,13 @@ export default function Screen() {
       await deleteCustomer(customer.id);
       deleteCustomerInStore(customer.id);
     } catch (e) {
-      setDeleteError((e as Error).message);
+      // 23503 = foreign key violation: the customer still has bikes.
+      const isReferenced = (e as { code?: string }).code === '23503';
+      setDeleteError(
+        isReferenced
+          ? `${customer.firstName} ${customer.lastName} har cykler registreret. Slet cyklerne først.`
+          : (e as Error).message
+      );
     }
   };
 

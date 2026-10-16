@@ -50,9 +50,11 @@ export function DeleteConfirmationDialog(
               <Text>Tilbage</Text>
             </Button>
           </DialogClose>
-          <Button variant={"destructive"} onPress={onConfirm}>
-            <Text>Slet</Text>
-          </Button>
+          <DialogClose asChild>
+            <Button variant={"destructive"} onPress={onConfirm}>
+              <Text>Slet</Text>
+            </Button>
+          </DialogClose>
         </DialogFooter>
       </DialogContent>
     </Dialog>
