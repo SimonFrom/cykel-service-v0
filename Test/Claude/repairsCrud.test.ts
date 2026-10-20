@@ -1,5 +1,5 @@
 // Write-path tests for crud/repairs.ts against spec section 5.3. Supabase is mocked.
-import { createRepair, updateRepair } from '@/crud/repairs';
+import { createRepair, updateRepair, RepairSaveError } from '@/crud/repairs';
 import type { Repair } from '@/types/repair';
 
 type Call = { table: string; op: string; payload?: unknown; filters: [string, unknown][] };
@@ -54,8 +54,22 @@ const baseRepair = (over: Partial<Repair> = {}): Repair => ({
   totalPrice: 999,
   note: 'n',
   items: [
-    { id: 1, title: 'A', price: 150, quantity: 2, discount: { type: 'percent', value: 10 }, total: 1 },
-    { id: 2, title: 'B', price: 350, quantity: 1, discount: { type: 'amount', value: 50 }, total: 2 },
+    {
+      id: 1,
+      title: 'A',
+      price: 150,
+      quantity: 2,
+      discount: { type: 'percent', value: 10 },
+      total: 1,
+    },
+    {
+      id: 2,
+      title: 'B',
+      price: 350,
+      quantity: 1,
+      discount: { type: 'amount', value: 50 },
+      total: 2,
+    },
   ],
   createdAt: new Date('2026-01-01T00:00:00Z'),
   intakeDate: new Date('2026-01-02T00:00:00Z'),
@@ -68,7 +82,8 @@ const baseRepair = (over: Partial<Repair> = {}): Repair => ({
 const ok = (c: Call): Result =>
   c.table === 'repairs' && c.op === 'insert' ? { data: { id: 7 }, error: null } : { error: null };
 
-const byOp = (table: string, op: string) => mockCalls.filter((c) => c.table === table && c.op === op);
+const byOp = (table: string, op: string) =>
+  mockCalls.filter((c) => c.table === table && c.op === op);
 
 beforeEach(() => {
   mockCalls.length = 0;
@@ -78,8 +93,11 @@ beforeEach(() => {
 describe('createRepair', () => {
   it('AC-13/AC-8: persists calculator totals, ignoring caller totalPrice and item totals', async () => {
     const { id: _id, ...input } = baseRepair();
-    const id = await createRepair(input);
-    expect(id).toBe(7);
+    const saved = await createRepair(input);
+    // Contract v3: returns the saved Repair, not a number
+    expect(typeof saved).toBe('object');
+    expect(saved.id).toBe(7);
+    expect(saved.totalPrice).toBe(541.5);
     const repairRow = byOp('repairs', 'insert')[0].payload as Record<string, unknown>;
     expect(repairRow.total_price).toBe(541.5);
     expect(repairRow.discount_type).toBe('percent');
@@ -98,7 +116,15 @@ describe('createRepair', () => {
     const items = byOp('repair_items', 'insert')[0].payload as Record<string, unknown>[];
     for (const row of items) {
       expect(Object.keys(row).sort()).toEqual(
-        ['discount_type', 'discount_value', 'price', 'quantity', 'repair_id', 'title', 'total'].sort()
+        [
+          'discount_type',
+          'discount_value',
+          'price',
+          'quantity',
+          'repair_id',
+          'title',
+          'total',
+        ].sort()
       );
       expect(row.repair_id).toBe(7);
     }
@@ -111,7 +137,16 @@ describe('createRepair', () => {
   it('AC-12: zero or null discount is stored as type null, value 0', async () => {
     const { id: _id, ...input } = baseRepair({
       discount: { type: 'amount', value: 0 },
-      items: [{ id: 1, title: 'A', price: 10, quantity: 1, discount: { type: 'percent', value: 0 }, total: 0 }],
+      items: [
+        {
+          id: 1,
+          title: 'A',
+          price: 10,
+          quantity: 1,
+          discount: { type: 'percent', value: 0 },
+          total: 0,
+        },
+      ],
     });
     await createRepair(input);
     const repairRow = byOp('repairs', 'insert')[0].payload as Record<string, unknown>;
@@ -125,12 +160,7 @@ describe('createRepair', () => {
 
   it('SR-3: invalid numbers throw before any request is sent', async () => {
     const { id: _id, ...input } = baseRepair();
-    for (const bad of [
-      { price: NaN },
-      { price: 1e300 },
-      { quantity: Infinity },
-      { quantity: 0 },
-    ]) {
+    for (const bad of [{ price: NaN }, { price: 1e300 }, { quantity: Infinity }, { quantity: 0 }]) {
       const repair = { ...input, items: [{ ...input.items[0], ...bad }] };
       await expect(createRepair(repair)).rejects.toBeDefined();
     }
@@ -139,7 +169,8 @@ describe('createRepair', () => {
 
   it('AC-14: a repair insert error is thrown', async () => {
     const err = { message: 'boom', code: '23514' };
-    mockRespond = (c) => (c.table === 'repairs' && c.op === 'insert' ? { data: null, error: err } : { error: null });
+    mockRespond = (c) =>
+      c.table === 'repairs' && c.op === 'insert' ? { data: null, error: err } : { error: null };
     const { id: _id, ...input } = baseRepair();
     await expect(createRepair(input)).rejects.toBe(err);
   });
@@ -157,19 +188,101 @@ describe('createRepair', () => {
     expect(del[0].filters).toEqual([['id', 7]]);
   });
 
-  it('AC-17: original error is thrown even if the compensating delete also fails', async () => {
+  it('F-4/SEC-1: insert AND compensating delete fail -> RepairSaveError with repairId and cause', async () => {
     const err = { message: 'items failed' };
     mockRespond = (c) => {
       if (c.table === 'repair_items' && c.op === 'insert') return { error: err };
-      if (c.table === 'repairs' && c.op === 'delete') return { error: { message: 'delete failed' } };
+      if (c.table === 'repairs' && c.op === 'delete')
+        return { error: { message: 'delete failed' } };
       return ok(c);
     };
     const { id: _id, ...input } = baseRepair();
-    await expect(createRepair(input)).rejects.toBe(err);
+    const thrown = await createRepair(input).catch((e) => e);
+    expect(thrown).toBeInstanceOf(RepairSaveError);
+    expect(thrown).toBeInstanceOf(Error);
+    expect(thrown.repairId).toBe(7);
+    expect(thrown.cause).toBe(err);
+  });
+
+  it('F-4: when only the item insert fails, the original error is rethrown (not RepairSaveError)', async () => {
+    const err = { message: 'items failed' };
+    mockRespond = (c) => (c.table === 'repair_items' && c.op === 'insert' ? { error: err } : ok(c));
+    const { id: _id, ...input } = baseRepair();
+    const thrown = await createRepair(input).catch((e) => e);
+    expect(thrown).toBe(err);
+    expect(thrown).not.toBeInstanceOf(RepairSaveError);
+  });
+
+  it('F-3: returns the saved Repair with new id, calculator totals and normalised discounts', async () => {
+    const { id: _id, ...input } = baseRepair({
+      discount: { type: 'amount', value: 0 },
+      totalPrice: 12345,
+      items: [
+        {
+          id: 0,
+          title: 'A',
+          price: 150,
+          quantity: 2,
+          discount: { type: 'percent', value: 10 },
+          total: 999,
+        },
+        {
+          id: 0,
+          title: 'B',
+          price: 10,
+          quantity: 1,
+          discount: { type: 'percent', value: 0 },
+          total: 999,
+        },
+      ],
+    });
+    const saved = await createRepair(input);
+    expect(saved.id).toBe(7);
+    expect(saved.totalPrice).toBe(280);
+    expect(saved.discount).toBeNull();
+    expect(saved.items.map((i) => i.total)).toEqual([270, 10]);
+    expect(saved.items.map((i) => i.discount)).toEqual([{ type: 'percent', value: 10 }, null]);
+    expect(saved.bikeId).toBe(1);
+    expect(saved.customerId).toBe(2);
+  });
+
+  it('F-2: line price is rounded to 2 decimals in the written row', async () => {
+    const { id: _id, ...input } = baseRepair({
+      discount: null,
+      items: [{ id: 0, title: 'A', price: 99.994, quantity: 1, discount: null, total: 0 }],
+    });
+    await createRepair(input);
+    const items = byOp('repair_items', 'insert')[0].payload as Record<string, unknown>[];
+    expect(items[0].price).toBe(99.99);
+    expect(items[0].total).toBe(99.99);
+  });
+
+  it('F-2: discount value that rounds to zero is stored as null / 0', async () => {
+    const { id: _id, ...input } = baseRepair({
+      discount: { type: 'amount', value: 0.004 },
+      items: [
+        {
+          id: 0,
+          title: 'A',
+          price: 10,
+          quantity: 1,
+          discount: { type: 'amount', value: 0.001 },
+          total: 0,
+        },
+      ],
+    });
+    await createRepair(input);
+    const row = byOp('repairs', 'insert')[0].payload as Record<string, unknown>;
+    expect([row.discount_type, row.discount_value]).toEqual([null, 0]);
+    const items = byOp('repair_items', 'insert')[0].payload as Record<string, unknown>[];
+    expect([items[0].discount_type, items[0].discount_value]).toEqual([null, 0]);
   });
 
   it('no lines: only the repair is inserted, total is 0 with percent discount (E6)', async () => {
-    const { id: _id, ...input } = baseRepair({ items: [], discount: { type: 'percent', value: 10 } });
+    const { id: _id, ...input } = baseRepair({
+      items: [],
+      discount: { type: 'percent', value: 10 },
+    });
     await createRepair(input);
     expect((byOp('repairs', 'insert')[0].payload as Record<string, unknown>).total_price).toBe(0);
     expect(byOp('repair_items', 'insert')).toHaveLength(0);
@@ -177,6 +290,36 @@ describe('createRepair', () => {
 });
 
 describe('updateRepair', () => {
+  it('F-3: returns the saved Repair with calculator totals and normalised discounts', async () => {
+    const base = baseRepair();
+    const saved = await updateRepair(
+      5,
+      baseRepair({
+        totalPrice: 1,
+        items: [
+          { ...base.items[0], total: 1 },
+          { ...base.items[1], total: 2 },
+        ],
+      })
+    );
+    expect(saved.id).toBe(5);
+    expect(saved.totalPrice).toBe(541.5);
+    expect(saved.discount).toEqual({ type: 'percent', value: 5 });
+    expect(saved.items.map((i) => i.total)).toEqual([270, 300]);
+  });
+
+  it('F-2: line price is rounded to 2 decimals in the written row', async () => {
+    await updateRepair(
+      5,
+      baseRepair({
+        discount: null,
+        items: [{ id: 1, title: 'A', price: 99.994, quantity: 1, discount: null, total: 0 }],
+      })
+    );
+    const items = byOp('repair_items', 'insert')[0].payload as Record<string, unknown>[];
+    expect(items[0].price).toBe(99.99);
+  });
+
   it('AC-13/AC-9: persists calculator totals, ignoring caller values', async () => {
     await updateRepair(5, baseRepair());
     const row = byOp('repairs', 'update')[0].payload as Record<string, unknown>;
@@ -216,7 +359,16 @@ describe('updateRepair', () => {
       5,
       baseRepair({
         discount: { type: 'percent', value: 0 },
-        items: [{ id: 1, title: 'A', price: 10, quantity: 1, discount: { type: 'amount', value: 0 }, total: 0 }],
+        items: [
+          {
+            id: 1,
+            title: 'A',
+            price: 10,
+            quantity: 1,
+            discount: { type: 'amount', value: 0 },
+            total: 0,
+          },
+        ],
       })
     );
     const row = byOp('repairs', 'update')[0].payload as Record<string, unknown>;
@@ -227,8 +379,12 @@ describe('updateRepair', () => {
 
   it('SR-3: invalid numbers throw before any request is sent', async () => {
     const r = baseRepair();
-    await expect(updateRepair(5, { ...r, items: [{ ...r.items[0], price: NaN }] })).rejects.toBeDefined();
-    await expect(updateRepair(5, { ...r, items: [{ ...r.items[0], quantity: -1 }] })).rejects.toBeDefined();
+    await expect(
+      updateRepair(5, { ...r, items: [{ ...r.items[0], price: NaN }] })
+    ).rejects.toBeDefined();
+    await expect(
+      updateRepair(5, { ...r, items: [{ ...r.items[0], quantity: -1 }] })
+    ).rejects.toBeDefined();
     expect(mockCalls).toHaveLength(0);
   });
 
@@ -246,7 +402,8 @@ describe('updateRepair', () => {
 
   it('AC-14/AC-16: item insert error is thrown', async () => {
     const err = { message: 'insert failed' };
-    mockRespond = (c) => (c.table === 'repair_items' && c.op === 'insert' ? { error: err } : { error: null });
+    mockRespond = (c) =>
+      c.table === 'repair_items' && c.op === 'insert' ? { error: err } : { error: null };
     await expect(updateRepair(5, baseRepair())).rejects.toBe(err);
   });
 
