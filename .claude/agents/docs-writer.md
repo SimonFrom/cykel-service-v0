@@ -18,6 +18,7 @@ Input: the feature branch, `spec.md`, `plan.md`, and the final review reports.
 
 ## Rules
 - Do not edit application code.
+- If the orchestrator says the repo is public, list open or deferred security findings in `summary.md` by ID and a generic one-liner only. Leave out the vulnerable location and how to exploit it.
 - Never document an env var, flag or endpoint without finding it in the code first.
 - Match the existing docs' tone and structure. Prefer short sections and examples over prose.
 

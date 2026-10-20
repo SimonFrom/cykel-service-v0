@@ -29,14 +29,14 @@ File: `docs/features/19-repair-discounts/migration.sql`. Run in the Supabase SQL
 1. Preflight first: run only the block above the `END OF PREFLIGHT` marker. Read-only.
 2. Check the output:
    - `total_price`, `price` and `total` must be numeric, or the migration aborts.
-   - `quantity` type: if integer, see follow-up SEC-3.
+   - `quantity` type: note whether it is integer (see follow-ups).
    - `items_failing_validation` should be 0; otherwise validation aborts. Fix those rows first.
    - Paste the output (types, `relrowsecurity`, `pg_policies`, null and failing counts) into `status.md` (SR-10 gate evidence).
    - Check that `private` is not in Settings > API > Exposed schemas.
 3. Run the `begin; … commit;` block. One transaction; any error leaves nothing behind.
 4. Rollback (commented at end of file): restores totals from backup, drops the 13 constraints and 4 columns, in one transaction. Keep backup tables until verified, then drop them with the commented statements.
 
-No policy, grant or RLS changes. Backup tables in `private` have no RLS (see SEC-6).
+No policy, grant or RLS changes.
 
 ## Tests
 - `npm test`: jest 29 + jest-expo 54. Config in `jest.config.js` (preset jest-expo, roots `Test/Claude/`).
@@ -50,8 +50,8 @@ No policy, grant or RLS changes. Backup tables in `private` have no RLS (see SEC
 
 ## Known limitations
 - Save is not atomic. `updateRepair` deletes and re-inserts items; if the insert fails the repair keeps the new `total_price` with zero lines. Retry "Opdater" fixes it.
-- `total_price` is not authoritative (SR-15): client-computed; anyone with the anon key can write any total that passes row constraints. Don't use for invoices or payments until auth and a server-side save exist.
-- RLS unverified (repo has no schema). Pre-existing; not changed here.
+- `total_price` is not authoritative (SR-15): it is computed in the client. Don't use it for invoices or payments until auth and a server-side save exist.
+- Access control is pre-existing and not changed by this feature.
 - Newly added lines carry temporary item ids in the returned repair until the next refetch.
 - iOS modal: no repair-level discount, no save error handling.
 - Plain 2-decimal display, no Danish number formatting.
@@ -60,13 +60,13 @@ No policy, grant or RLS changes. Backup tables in `private` have no RLS (see SEC
 | ID | Item |
 |---|---|
 | CR-9 | After `RepairSaveError` retry the repair isn't added to the store list. Fix: upsert in `updateRepairInStore`. |
-| SEC-7 | `updateRepair` doesn't detect 0 matched rows. Use `.select('id')` and throw if empty. |
-| SEC-3 | If `quantity` is integer in the DB, `validateQuantity` must reject decimals. |
+| SEC-7 | Hardening item in the save path; details in the local security report. |
+| SEC-3 | Input validation follow-up, depends on the preflight output; details in the local security report. |
 | CR-10 | `displayTotals` fallback: one invalid line discount drops all line discounts from the display. |
 | CR-11 | `parseNumberText`/`NumberField` duplicate DiscountInput's parse pattern. |
 | CR-12 | Use `refProp` instead of `{...({ ref } as object)}`. |
 | UX-10 | "Ugyldigt tal" flashes while typing a trailing `,`/`.` in Antal/Pris. |
 | UX-11 | Narrow card: trash button last in tab order. |
 | QA-8 | No unit tests for `parseNumberText`, `validateQuantity`, `validatePrice` (AC-25). |
-| SEC-6 | RLS + revoke on `private` backup tables (needs approval). |
-| — | `.env` is tracked in git; confirm the key is the anon key. |
+| SEC-6 | Hardening item for the migration's backup tables (declined at Gate 2); details in the local security report. |
+| — | Pre-existing configuration hardening item; details in the local security notes. |
