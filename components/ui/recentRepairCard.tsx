@@ -58,7 +58,7 @@ export default function RecentRepairCard({
         </Text>
         <CardContent>
           <Text className="text-md font-mono font-semibold">Note: {repair.note}</Text>
-          <Text className="text-md font-mono font-semibold">Pris: {repair.totalPrice} kr.</Text>
+          <Text className="text-md font-mono font-semibold">Pris: {repair.totalPrice.toFixed(2)} kr.</Text>
         </CardContent>
         <CardFooter className="flex-start flex gap-1">
           <Button onPress={handlePress} disabled={!canNavigate}>
