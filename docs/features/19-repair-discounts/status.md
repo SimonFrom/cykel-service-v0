@@ -6,11 +6,11 @@ request: "Add feature to discount items — repair total cost should support a d
 issue: https://github.com/SimonFrom/cykel-service-v0/issues/19
 base: main
 branch: feature/19-repair-discounts
-phase: gate2   # intake | spec | gate1 | plan | build | review | fix | docs | gate2 | done | escalated
+phase: done    # intake | spec | gate1 | plan | build | review | fix | docs | gate2 | done | escalated
 round: 2        # review round, max 3
 has_ui: true
 gate1_approved: true
-gate2_approved: false
+gate2_approved: true
 ```
 
 ## Log
@@ -26,3 +26,4 @@ gate2_approved: false
 - 2026-10-20 — fix r1 — merged backend 379c931, frontend 20d7a3d (stubs dropped), qa 7e8620f → fb9d26a; tsc OK, npm test 102/102. Notes: returned Repair carries temp item ids until refetch; roundMoney(1.005)=1.00 (float), unreachable via 2-decimal form input; quantity accepts decimals. → review round 2 (diff 8d8c6fa..fb9d26a)
 - 2026-10-20 — review r2 — code APPROVED_WITH_COMMENTS, security PASS, qa APPROVED, ux PASS; 0 blockers/majors; minors deferred (round-2/fixes.md). → docs
 - 2026-10-20 — docs — summary.md, STACK.md, README.md updated; final verification: tsc OK, npm test 102/102, expo export web OK. → gate2
+- 2026-10-21 — gate2 — user approved. SEC-6 declined (leave backup tables as is). CLAUDE.md updated (test setup, npm test, lib/repairPricing). Summary not posted to issue. Pending on user: run migration preflight + transaction, paste preflight output here (SR-10), manual checklist. No merge/push/PR.

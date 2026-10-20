@@ -34,6 +34,7 @@ npm run web       # web
 npm run ios       # iOS simulator
 npm run android   # Android emulator
 npx tsc --noEmit  # type check
+npm test          # jest unit tests (Test/Claude/)
 ```
 
 ## Architecture
@@ -52,7 +53,7 @@ crud/                       Supabase data access, one file per table
 store/                      Zustand stores, one per resource
 types/                      Domain types: Customer, Bike, Repair, RepairItem
 utils/supabase.ts           Supabase client (SecureStore on native, localStorage on web)
-lib/                        theme + utils (cn helper)
+lib/                        theme, utils (cn helper), repairPricing (single source of truth for price/discount math)
 ```
 
 Data flow — keep it one-directional:
@@ -96,7 +97,7 @@ Rules:
 
 ## Testing
 
-- No test setup exists yet. Ask before adding a test framework.
+- Jest + jest-expo is set up: `npm test`, config in `jest.config.js`, tests in `Test/Claude/`. Ask before adding other test frameworks.
 - Place tests that you write yourself in a folder `Test/Claude`.
 
 ## How Claude should work in this repo
