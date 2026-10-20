@@ -24,7 +24,7 @@ export default function RecentRepairCard({ repair, customer, bike }: { repair: R
 
   const router = useRouter();
   return (
-    <Button onPress={() => handlePress(bike!)} className="w-72 h-80">
+    <Pressable onPress={() => handlePress(bike!)} className="w-72 h-80">
     <Card className="w-72 h-80">
       <CardHeader>
         <Text className="text-lg text-muted-foreground font-mono">Reperation nr: {repair.id}</Text>
@@ -44,6 +44,6 @@ export default function RecentRepairCard({ repair, customer, bike }: { repair: R
         </Button>
       </CardFooter>
     </Card>
-    </Button>
+    </Pressable>
   );
 }
