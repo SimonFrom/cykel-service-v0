@@ -10,6 +10,7 @@ const mapRepairRow = (row: any, items: RepairItem[]): Repair => ({
   id: row.id,
   bikeId: row.bike_id,
   customerId: row.customer_id,
+  discount: null,
   totalPrice: items.reduce((sum: number, item: RepairItem) => sum + (item.total ?? 0), 0),
   note: row.note ?? undefined,
   items,
@@ -26,6 +27,7 @@ const mapItemRow = (row: any): RepairItem => ({
   title: row.title,
   price: row.price,
   quantity: row.quantity,
+  discount: null,
   total: row.total,
 });
 

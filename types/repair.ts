@@ -1,10 +1,14 @@
 import {RepairItem} from "@/types/repairItems";
+import {Discount} from "@/types/discount";
 
 
 export type Repair = {
     id: number
     bikeId: number
     customerId: number
+    // Repair-level discount, applied after line discounts
+    discount: Discount | null
+    // DERIVED: final total after all discounts, read from repairs.total_price
     totalPrice: number
     note?: string
     items: RepairItem[]

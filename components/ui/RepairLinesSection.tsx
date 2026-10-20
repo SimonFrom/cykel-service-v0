@@ -34,6 +34,7 @@ export function RepairLinesSection({ control }: Props) {
       id: Date.now(),
       title: '',
       price: 0,
+      discount: null,
       quantity: 1,
       total: 0,
     });
