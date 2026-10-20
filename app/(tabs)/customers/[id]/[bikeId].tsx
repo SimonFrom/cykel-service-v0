@@ -103,7 +103,7 @@ export default function BikeInfoScreen() {
               </View>
               <View style={styles.info}>
                 <Text style={styles.name}>Reperations nummer: {item.id}</Text>
-                <Text style={styles.name}>Total pris: {item.totalPrice} kr</Text>
+                <Text style={styles.name}>Total pris: {item.totalPrice.toFixed(2)} kr</Text>
                 <Text style={styles.name}>Oprettet: {item.createdAt.toLocaleDateString()}</Text>
               </View>
               <Button onPress={() => handleShowRepair(item)}>

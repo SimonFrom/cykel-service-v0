@@ -79,3 +79,6 @@ export const NAV_THEME: Record<'light' | 'dark', Theme> = {
     },
   },
 };
+
+// Error text colour: 5.6:1 on white (AA), replaces #E24B4A (3.9:1)
+export const ERROR_TEXT_COLOR = '#C62828';
