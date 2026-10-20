@@ -1,8 +1,4 @@
-import {
-  calculateLineTotals,
-  calculateRepairTotals,
-  validateDiscount,
-} from '@/lib/repairPricing';
+import { calculateLineTotals, calculateRepairTotals, validateDiscount } from '@/lib/repairPricing';
 import type { Discount } from '@/types/discount';
 
 const pct = (value: number): Discount => ({ type: 'percent', value });
@@ -195,9 +191,9 @@ describe('SR-3: throws on invalid numbers', () => {
   it('SR-3: price 1e300 throws', () => expect(line({ price: 1e300 })).toThrow());
   it('SR-3: price above 99999999.99 throws', () => expect(line({ price: 100000000 })).toThrow());
   it('SR-3: price exactly 99999999.99 is accepted', () => {
-    expect(
-      calculateLineTotals({ price: 99999999.99, quantity: 1, discount: null }).net
-    ).toBe(99999999.99);
+    expect(calculateLineTotals({ price: 99999999.99, quantity: 1, discount: null }).net).toBe(
+      99999999.99
+    );
   });
   it('SR-3: quantity NaN throws', () => expect(line({ quantity: NaN })).toThrow());
   it('SR-3: quantity Infinity throws', () => expect(line({ quantity: Infinity })).toThrow());

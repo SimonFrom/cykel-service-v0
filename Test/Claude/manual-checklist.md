@@ -95,3 +95,9 @@ On a scratch DB or inside a transaction you can discard:
 - SR-6: set a test row to `discount_type = 'bogus'` (constraint temporarily dropped); bike screen renders, line shows no discount, no `NaN`.
 - SR-11: console contains no payload dumps (`console.log(data)` removed); UI shows no Supabase `message`/`details`/`hint`/`code`.
 - SR-15: documentation check: spec section 8 states `total_price` is not authoritative in v1.
+
+## Round 1 fixes (F-1, F-3, F-4, UX-3)
+- F-1 field errors: in the create/edit repair form, type `abc`, `1e3`, `0` or an empty value in Antal; expect "Ugyldigt tal" / "Antal skal være større end 0" and no save request. Type `abc` or `-5` in Pris; expect "Ugyldigt tal" / "Pris skal være 0 eller mere". Changing a line's Antal/Pris so a discount becomes invalid (e.g. kr discount above the new gross) re-shows the discount error without touching the discount field.
+- F-4 retry after RepairSaveError: make `repair_items` inserts fail and the compensating delete fail (e.g. block both in devtools or temporarily revoke via RLS on a scratch DB), save a new repair; expect the generic Danish error. Restore access and press save again; expect `updateRepair` (PATCH on `repairs?id=eq.<id>`), no second POST to `repairs`, and exactly one repair row in the DB.
+- F-3 store reflects saved totals immediately: after saving a new repair, the list/bike screen and front page show the saved total (with discounts) without reload or refetch (Network tab: no extra GET). Same after editing an existing repair.
+- UX-3 toggle: the `%`/`kr` buttons are plain buttons in a labelled group; the active one has `aria-pressed="true"`, the other `"false"`; accessible names are "% (procent)" and "kr (kroner)". Verify with the accessibility tree in devtools; pressing toggles the state and revalidates the discount text.
