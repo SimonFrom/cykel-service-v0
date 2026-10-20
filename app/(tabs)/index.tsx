@@ -11,7 +11,7 @@ import { useCustomerStore } from '@/store/customerStore';
 import { useBikeStore } from '@/store/bikeStore';
 import { useRepairStore } from '@/store/repairStore';
 import { getCustomers } from '@/crud/customers';
-import { useCallback, useEffect } from 'react';
+import { useCallback } from 'react';
 import { Customer } from '@/types/customer';
 import RecentRepairCard from '@/components/ui/recentRepairCard';
 
@@ -42,9 +42,10 @@ export default function Screen() {
 
   const isLoading = useCustomerStore((s) => s.isLoading);
 
-  useEffect(
-    useCallback(() => { // useCallback forces refresh of the screen when navigating back to it, ensuring that the latest data is displayed½
-      setSelectedCustomer(null); // Clear selected customer when navigating to this screen
+  // Refetch on every focus so the front page is current when navigating back; clears selected customer
+  useFocusEffect(
+    useCallback(() => {
+      setSelectedCustomer(null);
       fetchCustomers();
       fetchRepairs();
       fetchBikes();
@@ -74,9 +75,7 @@ export default function Screen() {
         <Card className="p-4">
           <Text className="font-mono text-muted-foreground">Omsætning til dato: </Text>
         </Card>
-        <Text className="mt-8 ml-5 col-span-3 font-mono text-primary">
-          Seneste reparationer:
-        </Text>
+        <Text className="col-span-3 ml-5 mt-8 font-mono text-primary">Seneste reparationer:</Text>
         {repairs.length > 0 && (
           <ScrollView
             horizontal

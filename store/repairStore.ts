@@ -19,14 +19,14 @@ export const useRepairStore = create<RepairStore>((set) => ({
   isLoading: false,
   error: null,
   fetchRepairs: async () => {
-      set({ isLoading: true, error: null });
-      try {
-        const data = await getAllRepairs();
-        set({ repairs: data, isLoading: false });
-      } catch (e) {
-        set({ error: (e as Error).message, isLoading: false });
-      }
-    },
+    set({ isLoading: true, error: null });
+    try {
+      const data = await getAllRepairs();
+      set({ repairs: data, isLoading: false });
+    } catch (e) {
+      set({ error: (e as Error).message, isLoading: false });
+    }
+  },
   setRepairsInStore: (repairs) => set({ repairs }),
   selectedRepair: null,
   setSelectedRepair: (repair) => set({ selectedRepair: repair }),
@@ -40,4 +40,3 @@ export const useRepairStore = create<RepairStore>((set) => ({
       repairs: state.repairs.filter((r) => r.id.toString() !== id.toString()),
     })),
 }));
-const fetchRepairs = useRepairStore((s) => s.fetchRepairs);
