@@ -10,7 +10,7 @@ CLAUDE.md is the source of truth for working rules; this file summarises stack f
 - **UI:** React Native Reusables (shadcn "new-york" style, `@rn-primitives/*`), Nativewind 4 + Tailwind 3.4, `class-variance-authority`, `lucide-react-native`, `@expo/vector-icons`
 - **State / forms:** Zustand 5 (one store per resource), react-hook-form 7
 - **Backend:** none of our own. Supabase (`@supabase/supabase-js` ^2.103) accessed directly from the client
-- **Database:** Supabase Postgres. Tables in use: `customers`, `bikes`, `repairs`, `repair_items`. There's no schema or migrations in the repo.
+- **Database:** Supabase Postgres. Tables in use: `customers`, `bikes`, `repairs`, `repair_items`. No schema or migration tooling in the repo. One-off SQL lives in `docs/features/<slug>/migration.sql` and is run by hand in the Supabase SQL editor.
 - **Auth:** Supabase client with session persistence (SecureStore on native, localStorage on web). No login flow in the app (no `supabase.auth` calls). Access control is meant to come from RLS.
 - **Hosting:** not deployed yet. `app.json` sets web `output: static`.
 - **CI:** GitHub Actions on PR/push to `main`: Node 22, `npm ci`, `npx tsc --noEmit`
@@ -26,9 +26,10 @@ CLAUDE.md is the source of truth for working rules; this file summarises stack f
 | `crud/` | Supabase data access + row↔type mapping, one file per table | backend-developer |
 | `types/` | Domain types (`Customer`, `Bike`, `Repair`, `RepairItem`), the shared contract | backend-developer |
 | `utils/supabase.ts` | Supabase client | backend-developer |
-| `lib/` | `theme.ts`, `utils.ts` (`cn`) | frontend-developer |
+| `lib/` | `theme.ts`, `utils.ts` (`cn`), `repairPricing.ts` (price and discount math, single source of truth) | frontend-developer |
 | `global.css`, `tailwind.config.js` | Theme tokens / Tailwind config | frontend-developer |
-| `Test/Claude/` | Tests written by Claude (folder doesn't exist yet) | qa-engineer |
+| `Test/Claude/` | Tests written by Claude (jest + jest-expo, see `jest.config.js`) | qa-engineer |
+| `jest.config.js` | Jest config: preset `jest-expo`, roots `Test/Claude/` | backend-developer (shared) |
 | `expo-env.d.ts`, `nativewind-env.d.ts`, `.expo/` | Generated | none (do not edit) |
 | `.env` | Supabase URL + anon key | none (do not edit) |
 
@@ -41,7 +42,7 @@ web:        npm run web                 # unverified; primary target per CLAUDE.
 lint:       none defined
 format:     npx prettier --check .      # ✗ fails: 38 files not formatted (prettier 3.8.3)
 typecheck:  npx tsc --noEmit            # ✓ verified
-test:       none (no test framework; ask before adding one)
+test:       npm test                    # jest + jest-expo; tests in Test/Claude/ (approved in #19)
 test-e2e:   none
 build:      TODO (no build/export script or deploy config)
 audit:      none defined
@@ -56,7 +57,8 @@ audit:      none defined
 - **Component library / design system:** React Native Reusables + Nativewind `className`, with `cn()` for conditional classes. Dark/light theme comes from `global.css` CSS variables.
 - **Formatting:** Prettier: 2 spaces, single quotes, print width 100, trailing commas es5, `bracketSameLine`, Tailwind class sorting (`cva` included).
 - **Language:** code and identifiers in English, UI text in Danish.
-- **Test style:** none yet
+- **Test style:** jest unit tests in `Test/Claude/*.test.ts`. Pure logic is tested directly. `crud/` tests mock `@/utils/supabase`.
+- **Price and discount math:** `lib/repairPricing.ts` is the only place that calculates line or repair totals and rounds money. Screens and `crud/` import it. Nothing else calculates totals.
 - **Commit message format:** free-form, imperative English sentences (no Conventional Commits). Branches merge to `main` via PR (`/create-pr`).
 
 ## Constraints
@@ -73,7 +75,7 @@ audit:      none defined
 ## Known deviations (code vs. stated conventions)
 - `zustand` is imported by all stores but isn't declared in `package.json`. It only resolves transitively via `@rn-primitives/portal`.
 - `crud/bikes.ts` `deleteBike` and `crud/customers.ts` `getCustomer` log errors instead of throwing them.
-- `crud/repairs.ts` uses `any` for row mappers (7 `any` occurrences repo-wide). `customerContacted` is read as a camelCase DB column.
+- `crud/repairs.ts` row mappers are typed (`RepairRow`, `RepairItemRow`, #19). `customerContacted` is read as a camelCase DB column.
 - `components/ui/stock components/button.tsx` has been hand-edited (`👈 CHANGED` comments).
 - `text.tsx`, `switch.tsx` and `native-only-animated-view.tsx` exist both in `components/ui/` and in `stock components/`.
 - 38 files fail `prettier --check`.

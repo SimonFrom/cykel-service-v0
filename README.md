@@ -91,6 +91,7 @@ Or scan the QR code with [Expo Go](https://expo.dev/go) on a physical device.
 | `npm run android` | Launch on the Android emulator |
 | `npm run web` | Run the Metro web bundler |
 | `npm run clean` | Remove `.expo` and `node_modules` |
+| `npm test` | Run the Jest unit tests in `Test/Claude/` |
 
 ## Adding UI components
 
