@@ -58,13 +58,15 @@ export const createCustomer = async (customer: Omit<Customer, 'id'>) => {
     } satisfies Customer;
 };
 
+// RLS can silently block a delete (no error, 0 rows), so check that the row was actually removed.
 export const deleteCustomer = async (id: number) => {
-    const {data, error} = await supabase
+    const { data, error } = await supabase
         .from('customers').delete()
         .eq('id', id)
+        .select('id')
 
-    if (error) return error;
-
+    if (error) throw error;
+    if (!data?.length) throw new Error('Databasen afviste sletningen (tjek RLS-regler for sletning).');
 }
 
 export const updateCustomer = async (id: number, customer: Customer) => {
