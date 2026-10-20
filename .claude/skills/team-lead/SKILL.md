@@ -39,6 +39,18 @@ docs/features/<slug>/
 
 Templates live in this skill's `templates/` folder (`.claude/skills/team-lead/templates/`). Every subagent prompt you write must include: the slug, the absolute paths of the files the agent should read, the path it must write, the **absolute path** of any template it needs (resolve whether this skill lives in `./.claude/` or `~/.claude/`), and the mode (design/review/write-tests/verify).
 
+## Git and feature docs
+`docs/features/<slug>/` is committed to `feature/<slug>`, so the spec, plan, reviews and summary ship with the code and stay as the project's design history.
+
+- **Commit at the end of every phase** using the project's commit format from STACK.md, e.g. `docs(<slug>): spec approved`, `docs(<slug>): review round 2`. Stage only `docs/features/<slug>/` (`git add docs/features/<slug>`), never `git add -A`.
+- **Commit before Phase 3.** Worktrees are created from the last commit, so `spec.md`, `ux.md`, `plan.md` and `status.md` must be committed before you dispatch the build. Also give subagents the absolute paths of docs in the main checkout, so they can always read the latest version.
+- **Public repos: the security reports rule.** At intake, check visibility with `gh repo view --json visibility -q .visibility`. If there's no GitHub remote, ask the user whether the repo is or will be public. Record the answer as `repo_visibility` in status.md. If the repo is public:
+  - `reviews/round-*/security.md` is **never committed**. On the first run, ask the user's permission to add `docs/features/*/reviews/**/security.md` to `.gitignore`.
+  - `security-design.md` stays uncommitted until Gate 2. It's committed only if no SEC blockers or majors are open; otherwise it stays local and you tell the user. Worktree agents read it via its absolute path in the main checkout.
+  - In `fixes.md` and `summary.md`, describe open or deferred SEC findings generically (e.g. "SEC-4: hardening item, details in local report"), with no exploit details.
+- **Escalation.** If the loop escalates with security blockers open, don't commit anything that describes them, regardless of visibility.
+- **Never push** without the user asking.
+
 ## Phase 0: Intake
 1. If `$ARGUMENTS` starts with `resume`, read `docs/features/<slug>/status.md` and continue from the recorded phase.
 2. **GitHub issue input.** If `$ARGUMENTS` is `#<n>`, a bare number, or a `github.com/<owner>/<repo>/issues/<n>` URL:
@@ -77,6 +89,7 @@ Write `plan.md` from `templates/plan.md`. It contains:
 - The verification commands taken from CLAUDE.md (lint, typecheck, test, build).
 
 ## Phase 3: Build (parallel)
+0. Commit the feature docs (see **Git and feature docs**). The worktrees won't see uncommitted files.
 1. If there are `[shared]` tasks (shared types, contract files), dispatch the owning developer first. Commit the result to `feature/<slug>` so both worktrees start from it.
 2. In a **single message**, dispatch these concurrently, each with `isolation: "worktree"`:
    - `backend-developer`, given its `[backend]` tasks
@@ -128,7 +141,7 @@ Write `plan.md` from `templates/plan.md`. It contains:
    - verification results
 
    Do **not** merge to the base branch, push or open a PR unless the user explicitly asks. If the feature came from an issue, any PR body you write later should include `Closes #<n>`. Also offer to post `summary.md` as an issue comment, but only post it if the user says yes.
-4. Mark status.md `phase: done`.
+4. Mark status.md `phase: done` and make the final docs commit, following the public-repo rules.
 
 ## Rules
 - Update `status.md` at the end of every phase. That's what makes `resume` work after a context reset.
