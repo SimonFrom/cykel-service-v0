@@ -39,3 +39,6 @@ yarn-error.*
 
 expo-env.d.ts
 # @end expo-cli
+# Team workflow: agent worktrees and (public repo) security review reports stay local
+.claude/worktrees/
+docs/features/*/reviews/**/security.md

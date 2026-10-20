@@ -40,7 +40,7 @@ Both developers code against this; backend implements it.
 ## Deferred (minors)
 | ID | Summary |
 |---|---|
-| SEC-6 / QA-4 | Enable RLS + `revoke all on schema private from anon, authenticated` on backup tables — touches RLS/grants; CLAUDE.md requires asking first. Raise at Gate 2 |
+| SEC-6 / QA-4 | Hardening item for the migration's backup tables; needs user approval. Raise at Gate 2. Details in the local security report |
 | UX-8 | Verify footer Rabat row at 320px / 400% zoom — manual checklist |
 | CR-6 / QA-7 | `createRepairModal.ios.tsx` differs from web — intentionally unchanged; mention at Gate 2 |
 | QA-6 | Missing customer/bike shows the generic save error |
