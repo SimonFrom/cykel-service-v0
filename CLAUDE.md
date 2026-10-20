@@ -2,6 +2,8 @@
 
 Baseline for every Claude session on this project. If you want to change a rule, change it here — don't override it locally.
 
+Stack facts, commands, path ownership and known deviations: see `docs/STACK.md`.
+
 ## Project context
 
 - **What:** A service management app for small bike workshops — tracks customers, their bikes and repair jobs. A lightweight alternative to a full POS/ERP system.
