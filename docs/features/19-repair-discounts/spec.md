@@ -2,7 +2,7 @@
 
 - **Slug:** 19-repair-discounts
 - **Status:** approved (Gate 1), revised
-- **Contract version:** 2
+- **Contract version:** 3
 - **Author:** spec-writer · **Approved by:** Simon From on 2026-10-20
 - **Source:** GitHub issue #19 "Add feature to discount items"
 - **Related:** `security-design.md` (SR-1 to SR-15), `ux.md`
@@ -85,7 +85,7 @@ No new roles. There's no login flow, so access is whatever the existing RLS on `
 - **AC-14:** Given the Supabase update or insert fails (for example a check constraint violation), when the user clicks "Opret"/"Opdater", then the modal stays open, a Danish error "Reparationen kunne ikke gemmes" is shown (no raw Supabase message), and `updateRepair`/`createRepair` throw instead of returning the error.
 - **AC-15:** Given existing repairs created before this feature, when the migration runs, then every `repair_items.total = round(price * quantity, 2)` and every `repairs.total_price = sum(repair_items.total)` (0 if no lines). Discounts are null/0.
 - **AC-16 (SR-12):** Given an existing repair being edited and `POST /rest/v1/repair_items` blocked in devtools, when the user clicks "Opdater", then the save error is shown, the modal stays open, and every form value (lines, prices, quantities, line and repair discounts) is unchanged. When the block is removed and the user clicks "Opdater" again, the DB lines, line totals and `total_price` match §3.
-- **AC-17 (SR-13):** Given a new repair and `POST /rest/v1/repair_items` blocked, when the user clicks "Opret", then the save error is shown and no repair row is left for that attempt. When the block is removed and the user clicks "Opret" again, exactly one new repair exists for the bike, with the correct lines and totals.
+- **AC-17 (SR-13):** Given a new repair and `POST /rest/v1/repair_items` blocked, when the user clicks "Opret", then the save error is shown. When the block is removed and the user retries, exactly one new repair exists for the bike, with the correct lines and totals: a retry never creates a second repair. Either the compensating delete removed the row (retry creates it again), or the delete also failed with `RepairSaveError` and the retry updates `repairId` (submit label now "Opdater").
 - **AC-18 (B-1):** Given a repair with a repair-level discount, when the user removes all lines, then the discount is kept in form state and the footer stays visible with "Subtotal 0.00". A flat discount > 0 then shows "Rabat kan ikke overstige beløbet" and blocks submit until fixed; a percent discount shows "I alt 0.00" (E6). The footer is hidden only when there are no lines and no repair discount.
 - **AC-19:** Given the modal, when it is opened for a new repair (`repair.id === 0`), then the submit button says "Opret". When it is opened for a saved repair (`repair.id !== 0`), including one with zero lines, it says "Opdater".
 - **AC-20 (B-3):** Given the web modal at a 375 × 600 CSS px viewport with 5 lines and a repair discount error showing, when the user scrolls the modal, then the footer (Subtotal / Rabat / I alt), every error text and the submit button can be reached by vertical scrolling only. At 320 CSS px width there is no horizontal scroll.
@@ -93,6 +93,7 @@ No new roles. There's no login flow, so access is whatever the existing RLS on `
 - **AC-22 (SR-7):** Given the migration has run, when a row is written via the SQL editor or the anon key with any of `discount_type = null, discount_value = 5`; `discount_type = 'percent', discount_value = 101`; an `'amount'` line discount above `round(price * quantity, 2)`; `total = -1`; `total` above line gross; `price = -1`; `quantity = 0`; or `total_price = -1`, then the write is rejected with SQLSTATE `23514`.
 - **AC-23 (SR-8):** Given `migration.sql`, when it runs against a DB where any of `repairs.total_price`, `repair_items.price`, `repair_items.total` is not `numeric`, or where an existing row violates a new constraint (e.g. `quantity = 0`), then the script raises an exception and no column, constraint, backup or value change persists.
 - **AC-24 (SR-9):** Given the migration has run, when `GET /rest/v1/<backup table name>` is called with the anon key, then it returns an error or `[]`, never rows.
+- **AC-25 (F-1):** Given a repair line, when the user enters a quantity of 0, a negative quantity, a negative price, or non-numeric text in Antal or Pris, then the matching Danish error ("Antal skal være større end 0", "Pris skal være 0 eller mere" or "Ugyldigt tal") appears under the field, the raw text is kept, the "Opret"/"Opdater" button submits nothing, and no request is sent.
 
 ## 5. API / data contract
 There's no HTTP API. The contract is the domain types, the pure calculator and the `crud/` functions. Auth: Supabase anon client and the existing RLS, unchanged.
@@ -143,9 +144,19 @@ export function calculateRepairTotals(
   discount: Discount | null
 ): RepairTotals;
 
+// v3: same as calculateRepairTotals but returns null instead of throwing (for live UI display).
+export function tryCalculateRepairTotals(
+  items: Pick<RepairItem, 'price' | 'quantity' | 'discount'>[],
+  discount: Discount | null
+): RepairTotals | null;
+
+// v3: 2-decimal rounding, round half up (same øre rounding as the calculator).
+export function roundMoney(value: number): number;
+
 // Returns a Danish error message or null. `base` = line gross or subtotal (DKK).
 export function validateDiscount(discount: Discount | null, base: number): string | null;
 ```
+No øre rounding or total calculation may happen outside `lib/repairPricing.ts`; UI code uses `tryCalculateRepairTotals` for display instead of local try/catch wrappers.
 All returned amounts are DKK numbers rounded to 2 decimals (`fromOre`). Error messages for `validateDiscount`:
 - `'Rabat skal være 0 eller mere'`
 - `'Procent skal være mellem 0 og 100'`
@@ -159,23 +170,35 @@ The calculator throws (not clamps) on non-finite or out-of-range inputs: `price`
 getRepairs(bikeId: number): Promise<Repair[]>      // unchanged signature
 getAllRepairs(): Promise<Repair[]>                 // unchanged signature
 getRepair(id: number): Promise<Repair | null>      // unchanged (error handling out of scope)
-createRepair(repair: Omit<Repair, 'id'>): Promise<number>  // unchanged signature
-updateRepair(id: number, repair: Repair): Promise<void>    // CHANGED: was implicit Promise<PostgrestError | undefined>; now throws
+createRepair(repair: Omit<Repair, 'id'>): Promise<Repair>  // CHANGED (v3): returns the saved repair; throws
+updateRepair(id: number, repair: Repair): Promise<Repair>  // CHANGED (v3): returns the saved repair; throws
 deleteRepair(id: number)                           // unchanged
+
+// v3: thrown by createRepair when the item insert fails AND the compensating delete fails.
+// The repair row with `repairId` still exists. `cause` = the original item-insert error.
+export class RepairSaveError extends Error {
+  repairId: number;
+}
 ```
 Behaviour changes:
-- **Write (create/update):** call `calculateRepairTotals(repair.items, repair.discount)` and write `total_price`, `discount_type`, `discount_value` on `repairs`. Write each item's `total` from `lines[i].net`, plus `discount_type` and `discount_value`. Normalise `value 0 → type null, value 0`. Ignore the caller's `totalPrice`/`items[].total` (SR-1). The calculator runs before the first Supabase call, so a throw from it sends no request (SR-3).
+- **Return value (v3):** both functions return the saved `Repair`: the id (new id on create), the caller's other fields, `items` with calculator `total`s, `totalPrice` from the calculator, and normalised discounts (`value 0 → null`). Callers put this into the store; no refetch.
+- **Price rounding (v3, F-2):** each line `price` is rounded with `roundMoney` before calculating and writing. Discount values are rounded with `roundMoney` before the `0 → null` check.
+- **Write (create/update):** compute totals once per call with `calculateRepairTotals(repair.items, repair.discount)` (no extra call used only for its throw) and write `total_price`, `discount_type`, `discount_value` on `repairs`. Write each item's `total` from `lines[i].net`, plus `discount_type` and `discount_value`. Normalise `value 0 → type null, value 0`. Ignore the caller's `totalPrice`/`items[].total` (SR-1). The calculator runs before the first Supabase call, so a throw from it sends no request (SR-3).
 - **Explicit column whitelist (SR-2):** payloads are object literals, no spreads of `repair`/`item`/form data. `repairs` writes never send `id` or `created_at`. `repair_items` inserts send exactly `repair_id, title, price, quantity, total, discount_type, discount_value`.
 - **Errors:** `createRepair` and `updateRepair` throw every Supabase error (repair insert/update, item delete, item insert). They no longer `console.error` and return them.
 - **Partial-save failure (non-atomic save, T-6).** A save is three requests and is not transactional:
   - `updateRepair`: (1) update `repairs` row, (2) delete all its `repair_items`, (3) insert the new items. If (3) fails, the DB is left with the new `total_price` and **zero lines**. This is accepted for v1. Recovery: the error is thrown, the modal stays open with all form state intact, and a retry of "Opdater" rewrites the full state (AC-16). Client validation matching the DB constraints (SR-14) keeps constraint failures out of normal use.
-  - `createRepair`: (1) insert `repairs`, (2) insert items. If (2) fails, `createRepair` deletes the repair row it just created (best effort), then rethrows the original error. So a retry of "Opret" creates exactly one repair (AC-17). If the compensating delete also fails, the original error is still thrown and the orphan (a repair with no lines) remains. That's accepted for v1.
+  - `createRepair`: (1) insert `repairs`, (2) insert items. If (2) fails, `createRepair` deletes the repair row it just created and checks that delete's error. If the delete succeeds, it rethrows the original error. If the delete also fails, it throws `RepairSaveError` with `repairId` set and `cause` = the original error; the repair row (no lines) remains, and the modal turns the retry into an update of that row (§7). Either way a retry of "Opret" never creates a second repair (AC-17).
   - The atomic fix (a `save_repair` Postgres function) is deferred with OQ-5.
 - **Read mapping (SR-6):** `mapRepairRow.totalPrice = Number(row.total_price ?? 0)`. Stop calculating it from items. `discount` = `{ type, value: Number(row.discount_value) }` only when `row.discount_type` is `'percent'` or `'amount'`; any other value, including null, maps to `null`. `mapItemRow` maps the same discount fields and `total = Number(row.total)`. Every numeric field that is non-finite after `Number()` maps to `0`.
 - Replace the `any` row mappers with typed row types (`RepairRow`, `RepairItemRow`) declared in `crud/repairs.ts`.
 
 ### 5.4 Store (`store/repairStore.ts`)
-No new actions. `Repair` gains `discount`. The existing refetch-on-focus on the bike screen and front page covers AC-10.
+```ts
+addRepairToStore(repair: Repair): void  // NEW (v3): prepend to `repairs`, set `selectedRepair`
+updateRepairInStore(repair: Repair): void  // unchanged
+```
+`Repair` gains `discount`. After a successful save the modal calls `addRepairToStore` (create) or `updateRepairInStore` (update) with the `Repair` returned by `crud/`. The existing refetch-on-focus on the bike screen and front page still covers AC-10.
 
 ## 6. Data model changes
 > **SCHEMA CHANGE: approved by the user on 2026-10-20.** There are no migrations in the repo. The SQL is delivered as `docs/features/19-repair-discounts/migration.sql`, and the user runs it in the Supabase SQL editor. No RLS, policy, grant or auth changes.
@@ -234,6 +257,12 @@ A failed run needs no rollback, because the transaction leaves nothing behind.
 - Save stays at the current request count: 1 repair write + 1 item delete + 1 item insert (create: 1 + 1, plus the compensating delete only on failure). No extra queries.
 - UI text is Danish. Line totals, subtotal, discount and "I alt" are shown with 2 decimals (`toFixed(2)`). The line total's current `toFixed(0)` is replaced (B-2). No Danish thousands formatting (decided, OQ-6).
 - Discount inputs keep the raw typed text locally. They accept only `^\d{1,8}([.,]\d{1,2})?$` after trim, with `,` normalised to `.` (`"12,5"` → 12.5). Empty means no discount. Anything else is `'Ugyldigt tal'` and the raw text is kept. `Number(t) || 0` isn't used for discount fields (SR-5).
+- **Antal/Pris inputs (v3, F-1):** same raw-text buffer and strict parse as discounts (no `Number(t) || 0`). The form validates via react-hook-form `rules.validate` and blocks submit:
+  - non-numeric text → `'Ugyldigt tal'`
+  - quantity ≤ 0 → `'Antal skal være større end 0'`
+  - price < 0 → `'Pris skal være 0 eller mere'`
+  Discount fields are revalidated when their base (price/quantity/lines) or their own type/value changes.
+- **Retry after `RepairSaveError` (v3, F-4):** on `RepairSaveError` the modal calls `setValue('id', err.repairId)`, so the next submit goes through `updateRepair` (label "Opdater") instead of creating a new repair. It still shows the generic "Reparationen kunne ikke gemmes".
 - The save path renders no Supabase internals (`message`/`details`/`hint`/`code`). The `console.log(data)` calls in `app/createRepairModal.tsx` are removed. `console.error(error)` in the catch is allowed (SR-11).
 - The modal card scrolls vertically (`ScrollView`, max height 90vh). Below 768 px width the body stacks vertically and the submit button comes after the lines section (B-3, AC-20).
 - New and touched error text uses a colour with ≥ 4.5:1 contrast: theme `text-destructive` if it passes, otherwise `#C62828` (B-4, AC-21).
@@ -280,7 +309,7 @@ A failed run needs no rollback, because the transaction leaves nothing behind.
 - DB-side total calculation (triggers, generated columns, a `save_repair` RPC) and an atomic save.
 - Any auth, RLS, policy or grant change.
 - Audit of who applied a discount.
-- Fixing `getRepair`/`deleteRepair` error swallowing, the `customerContacted` column naming, the bike screen's duplicated `useFocusEffect`, or the `Number(t) || 0` parsing on the existing price/quantity inputs (bounded by SR-3 in `crud/`).
+- Fixing `getRepair`/`deleteRepair` error swallowing, the `customerContacted` column naming, or the bike screen's duplicated `useFocusEffect`. (Price/quantity input parsing was moved into scope in v3, F-1.)
 - iOS/Android parity for the new modal fields.
 
 ## 11. Open questions
@@ -300,6 +329,7 @@ All resolved at Gate 1 (2026-10-20).
 ## Changelog
 - v1 — initial
 - v2 — revised after Gate 1 (see below)
+- v3 — contract change after review round 1 (see "Contract v3 changes" below)
 
 ## Changes after review
 - **Approval recorded:** schema change and test framework (jest + jest-expo, `npm test`, `Test/Claude/`) approved. Status set to approved, contract version 2.
@@ -328,3 +358,11 @@ All resolved at Gate 1 (2026-10-20).
   - AC-24 (SR-9): backup isn't readable by anon.
 - **§9:** added the test-setup item and a `DiscountInput` component, and extended the crud/modal items. QA now covers the validator and SR-3 unit tests.
 - **§10:** Danish number formatting, the atomic save/RPC, auth/RLS changes, audit and price/quantity input parsing are now explicitly out of scope.
+
+### Contract v3 changes (after review round 1, `reviews/round-1/fixes.md`)
+- **§5.2:** added `roundMoney` (2 dp, half up) and `tryCalculateRepairTotals` (returns `null` instead of throwing; used by the UI for live display). No rounding outside `lib/repairPricing.ts` (CR-3).
+- **§5.3:** `createRepair`/`updateRepair` now return `Promise<Repair>` (the saved repair with calculator totals and normalised discounts) (F-3). New `RepairSaveError { repairId }`, thrown when the item insert and the compensating delete both fail (F-4). Line `price` and discount values are rounded with `roundMoney` before calculating/writing (F-2). Totals computed once per call (CR-4).
+- **§5.4:** new store action `addRepairToStore`; the modal stores the returned `Repair` via `addRepairToStore`/`updateRepairInStore` (F-3).
+- **§7:** Antal/Pris strict parsing and validation with Danish messages, blocking submit (F-1); on `RepairSaveError` the modal sets `id` so the retry updates (F-4).
+- **AC-17** reworded: a retry after a failed "Opret" never creates a second repair. **AC-25** added for F-1.
+- **§10:** price/quantity input parsing removed from out of scope (QA-2 vs §10 conflict resolved in favour of SR-14).
