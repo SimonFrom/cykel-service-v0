@@ -48,6 +48,11 @@ function pctOf(ore: number, bp: number): number {
   return Math.floor((ore * bp + 5000) / 10000);
 }
 
+// Rounds a DKK amount to 2 decimals, half up (same øre rounding as the calculator).
+export function roundMoney(value: number): number {
+  return fromOre(toOre(value));
+}
+
 // Validates a discount (SR-3) and rounds its value to 2 dp (SR-4).
 function normalizeValue(discount: Discount): number {
   assertAmount(discount.value, 'discount value');
@@ -112,6 +117,18 @@ export function calculateRepairTotals(
     repairDiscount: fromOre(repairDiscount),
     total: fromOre(total),
   };
+}
+
+// Like calculateRepairTotals, but returns null instead of throwing (for live UI display).
+export function tryCalculateRepairTotals(
+  items: PricedItem[],
+  discount: Discount | null
+): RepairTotals | null {
+  try {
+    return calculateRepairTotals(items, discount);
+  } catch {
+    return null;
+  }
 }
 
 // Returns a Danish error message or null. `base` = line gross or subtotal (DKK).

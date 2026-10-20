@@ -10,6 +10,7 @@ type RepairStore = {
   setRepairsInStore: (repairs: Repair[]) => void;
   selectedRepair: Repair | null;
   setSelectedRepair: (selectedRepair: Repair | null) => void;
+  addRepairToStore: (repair: Repair) => void;
   updateRepairInStore: (repair: Repair) => void;
   deleteRepair: (id: number) => void;
 };
@@ -30,6 +31,8 @@ export const useRepairStore = create<RepairStore>((set) => ({
   setRepairsInStore: (repairs) => set({ repairs }),
   selectedRepair: null,
   setSelectedRepair: (repair) => set({ selectedRepair: repair }),
+  addRepairToStore: (repair) =>
+    set((state) => ({ selectedRepair: repair, repairs: [repair, ...state.repairs] })),
   updateRepairInStore: (updated) =>
     set((state) => ({
       selectedRepair: updated,
