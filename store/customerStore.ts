@@ -8,7 +8,7 @@ type CustomerStore = {
   isLoading: boolean;
   error: string | null;
   fetchCustomers: () => Promise<void>;
-  setSelectedCustomer: (customer: Customer) => void;
+  setSelectedCustomer: (customer: Customer | null) => void;
   setCustomersInStore: (customers: Customer[]) => void;
   updateCustomerInStore: (customer: Customer) => void;
   deleteCustomerInStore: (id: number) => void;

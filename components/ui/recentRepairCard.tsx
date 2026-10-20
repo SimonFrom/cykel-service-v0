@@ -7,6 +7,7 @@ import { useBikeStore } from '@/store/bikeStore';
 import { Customer } from '@/types/customer';
 import { Bike } from '@/types/bike';
 import { Card, CardDescription, CardTitle, CardContent, CardHeader, CardFooter } from '@/components/ui/stock components/card';
+import { Pressable } from 'react-native';
 
 export default function RecentRepairCard({ repair, customer, bike }: { repair: Repair, customer?: Customer, bike?: Bike }) {
 
@@ -23,6 +24,7 @@ export default function RecentRepairCard({ repair, customer, bike }: { repair: R
 
   const router = useRouter();
   return (
+    <Button onPress={() => handlePress(bike!)} className="w-72 h-80">
     <Card className="w-72 h-80">
       <CardHeader>
         <Text className="text-lg text-muted-foreground font-mono">Reperation nr: {repair.id}</Text>
@@ -42,5 +44,6 @@ export default function RecentRepairCard({ repair, customer, bike }: { repair: R
         </Button>
       </CardFooter>
     </Card>
+    </Button>
   );
 }

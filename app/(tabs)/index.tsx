@@ -31,29 +31,25 @@ const IMAGE_STYLE: ImageStyle = {
   width: 76,
 };
 
-
 export default function Screen() {
+  const customers = useCustomerStore((s) => s.customers);
+  const fetchCustomers = useCustomerStore((s) => s.fetchCustomers);
+  const setSelectedCustomer = useCustomerStore((s) => s.setSelectedCustomer);
+  const repairs = useRepairStore((s) => s.repairs);
+  const fetchRepairs = useRepairStore((s) => s.fetchRepairs);
+  const bikes = useBikeStore((s) => s.bikes);
+  const fetchBikes = useBikeStore((s) => s.fetchAllBikes);
 
-const customers = useCustomerStore((s) => s.customers);
-const fetchCustomers = useCustomerStore((s) => s.fetchCustomers);
-const repairs = useRepairStore((s) => s.repairs);
-const fetchRepairs = useRepairStore((s) => s.fetchRepairs);
-const bikes = useBikeStore((s) => s.bikes);
-const fetchBikes = useBikeStore((s) => s.fetchAllBikes);
+  const isLoading = useCustomerStore((s) => s.isLoading);
 
-
-const isLoading = useCustomerStore((s) => s.isLoading)
-
-
-
-useEffect(() => {
-  fetchCustomers();
-  fetchRepairs();
-  fetchBikes();
-}, [fetchCustomers, fetchRepairs, fetchBikes]);
-
-  const { colorScheme } = useColorScheme();
-
+  useEffect(
+    useCallback(() => { // useCallback forces refresh of the screen when navigating back to it, ensuring that the latest data is displayed½
+      setSelectedCustomer(null); // Clear selected customer when navigating to this screen
+      fetchCustomers();
+      fetchRepairs();
+      fetchBikes();
+    }, [fetchCustomers, fetchRepairs, fetchBikes, setSelectedCustomer])
+  );
 
   return (
     <>
@@ -66,29 +62,38 @@ useEffect(() => {
           </Text>
         </View>
       </View>
-      <View className='grid m-3 gap-3 grid-cols-3'>
+      <View className="m-3 grid grid-cols-3 gap-3">
         <Card className="p-4">
-          <Text className="text-muted-foreground font-mono">Reparationer til dato:</Text>
+          <Text className="font-mono text-muted-foreground">Reparationer til dato:</Text>
         </Card>
         <Card className="p-4">
-          <Text className="text-muted-foreground font-mono">Kunder til dato: {customers.length}</Text>
+          <Text className="font-mono text-muted-foreground">
+            Kunder til dato: {customers.length}
+          </Text>
         </Card>
         <Card className="p-4">
-          <Text className="text-muted-foreground font-mono">Omsætning til dato: </Text>
+          <Text className="font-mono text-muted-foreground">Omsætning til dato: </Text>
         </Card>
+        <Text className="mt-8 ml-5 col-span-3 font-mono text-primary">
+          Seneste reparationer:
+        </Text>
         {repairs.length > 0 && (
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator
             className="col-span-3"
             contentContainerClassName="flex-row items-center gap-4 pb-2">
-            {[...repairs].sort((a, b) => b.id - a.id).slice(0, 10).map((repair) => (
-              <RecentRepairCard 
-                key={repair.id} 
-                repair={repair} 
-                customer={customers.find(c => c.id === repair.customerId)} 
-                bike={bikes.find(b => b.id === repair.bikeId)} />
-            ))}
+            {[...repairs]
+              .sort((a, b) => b.id - a.id)
+              .slice(0, 10)
+              .map((repair) => (
+                <RecentRepairCard
+                  key={repair.id}
+                  repair={repair}
+                  customer={customers.find((c) => c.id === repair.customerId)}
+                  bike={bikes.find((b) => b.id === repair.bikeId)}
+                />
+              ))}
           </ScrollView>
         )}
       </View>
