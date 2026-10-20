@@ -3,7 +3,7 @@ import { supabase } from '@/utils/supabase';
 import { Repair } from '@/types/repair';
 import { RepairItem } from '@/types/repairItems';
 import { Discount } from '@/types/discount';
-import { calculateRepairTotals } from '@/lib/repairPricing';
+import { calculateRepairTotals, roundMoney, RepairTotals } from '@/lib/repairPricing';
 
 type RepairItemRow = {
   id: number;
@@ -48,11 +48,33 @@ const mapDiscount = (
 ): Discount | null =>
   type === 'percent' || type === 'amount' ? { type, value: toNumber(value) } : null;
 
-// Discount columns for a write: a null or zero discount is stored as type null, value 0 (AC-12).
-const discountColumns = (discount: Discount | null): DiscountColumns =>
-  discount == null || discount.value === 0
+// Rounds a discount value to 2 dp; a null or zero discount becomes null (AC-12).
+const normalizeDiscount = (discount: Discount | null): Discount | null => {
+  if (discount == null) return null;
+  const value = roundMoney(discount.value);
+  return value === 0 ? null : { type: discount.type, value };
+};
+
+// Discount columns for a write: no discount is stored as type null, value 0 (AC-12).
+const discountColumns = (discount: Discount | null): DiscountColumns => {
+  const d = normalizeDiscount(discount);
+  return d == null
     ? { discount_type: null, discount_value: 0 }
-    : { discount_type: discount.type, discount_value: Math.round(discount.value * 100) / 100 };
+    : { discount_type: d.type, discount_value: d.value };
+};
+
+// Thrown by createRepair when the item insert and the compensating delete both fail.
+// The repair row `repairId` still exists; `cause` is the original item insert error.
+export class RepairSaveError extends Error {
+  repairId: number;
+
+  constructor(repairId: number, cause: unknown) {
+    super('Repair saved without items');
+    this.name = 'RepairSaveError';
+    this.repairId = repairId;
+    this.cause = cause;
+  }
+}
 
 // Helpers to keep mapping in one place
 const mapItemRow = (row: RepairItemRow): RepairItem => ({
@@ -80,23 +102,40 @@ const mapRepairRow = (row: RepairRow): Repair => ({
   customerContacted: row.customerContacted,
 });
 
-// repair_items insert payload with computed line totals; caller totals are ignored (SR-1, SR-2).
-// Throws on invalid input, so call it before the first request (SR-3).
-const buildItemRows = (repairId: number, repair: Pick<Repair, 'items' | 'discount'>) => {
-  const { lines } = calculateRepairTotals(repair.items, repair.discount);
-  return repair.items.map((item, i) => {
+type PreparedRepair = {
+  items: RepairItem[];
+  discount: Discount | null;
+  totals: RepairTotals;
+};
+
+// Rounds prices and discounts, then computes totals once. Throws on invalid input, so call it
+// before the first request (SR-3). Caller totals are ignored (SR-1, SR-2).
+const prepareRepair = (repair: Pick<Repair, 'items' | 'discount'>): PreparedRepair => {
+  const rounded = repair.items.map((item) => ({
+    ...item,
+    price: roundMoney(item.price),
+    discount: normalizeDiscount(item.discount),
+  }));
+  const discount = normalizeDiscount(repair.discount);
+  const totals = calculateRepairTotals(rounded, discount);
+  const items = rounded.map((item, i) => ({ ...item, total: totals.lines[i].net }));
+  return { items, discount, totals };
+};
+
+// repair_items insert payload from prepared items.
+const buildItemRows = (repairId: number, items: RepairItem[]) =>
+  items.map((item) => {
     const d = discountColumns(item.discount);
     return {
       repair_id: repairId,
       title: item.title,
       price: item.price,
       quantity: item.quantity,
-      total: lines[i].net,
+      total: item.total,
       discount_type: d.discount_type,
       discount_value: d.discount_value,
     };
   });
-};
 
 export const getRepairs = async (bikeId: number): Promise<Repair[]> => {
   // One round-trip using a nested select; supabase pulls items in the same query
@@ -138,11 +177,11 @@ export const getRepair = async (id: number): Promise<Repair | null> => {
 };
 
 // Totals are computed from the lines; the caller's totalPrice and item totals are ignored.
-export const createRepair = async (repair: Omit<Repair, 'id'>): Promise<number> => {
-  // Both run before any request, so invalid input sends nothing (SR-3)
-  const totals = calculateRepairTotals(repair.items, repair.discount);
-  buildItemRows(0, repair);
-  const d = discountColumns(repair.discount);
+// Returns the saved repair.
+export const createRepair = async (repair: Omit<Repair, 'id'>): Promise<Repair> => {
+  // Runs before any request, so invalid input sends nothing (SR-3)
+  const { items, discount, totals } = prepareRepair(repair);
+  const d = discountColumns(discount);
 
   // Insert the repair first so we get the generated id
   const { data, error } = await supabase
@@ -169,25 +208,28 @@ export const createRepair = async (repair: Omit<Repair, 'id'>): Promise<number> 
   const repairId: number = data.id;
 
   // Then insert all items pointing at the new repair
-  const itemRows = buildItemRows(repairId, repair);
-  if (itemRows.length > 0) {
-    const { error: itemsError } = await supabase.from('repair_items').insert(itemRows);
+  if (items.length > 0) {
+    const { error: itemsError } = await supabase
+      .from('repair_items')
+      .insert(buildItemRows(repairId, items));
 
     if (itemsError) {
-      // Compensating delete so a retry creates exactly one repair (best effort, SR-13)
-      await supabase.from('repairs').delete().eq('id', repairId);
+      // Compensating delete so a retry creates exactly one repair (SR-13)
+      const { error: deleteError } = await supabase.from('repairs').delete().eq('id', repairId);
+      if (deleteError) throw new RepairSaveError(repairId, itemsError);
       throw itemsError;
     }
   }
 
-  return repairId;
+  return { ...repair, id: repairId, discount, items, totalPrice: totals.total };
 };
 
-export const updateRepair = async (id: number, repair: Repair): Promise<void> => {
-  // Both run before any request, so invalid input sends nothing (SR-3)
-  const totals = calculateRepairTotals(repair.items, repair.discount);
-  const itemRows = buildItemRows(id, repair);
-  const d = discountColumns(repair.discount);
+// Returns the saved repair.
+export const updateRepair = async (id: number, repair: Repair): Promise<Repair> => {
+  // Runs before any request, so invalid input sends nothing (SR-3)
+  const { items, discount, totals } = prepareRepair(repair);
+  const itemRows = buildItemRows(id, items);
+  const d = discountColumns(discount);
 
   // Update the repair row
   const { error } = await supabase
@@ -220,6 +262,8 @@ export const updateRepair = async (id: number, repair: Repair): Promise<void> =>
 
     if (insertError) throw insertError;
   }
+
+  return { ...repair, id, discount, items, totalPrice: totals.total };
 };
 
 export const deleteRepair = async (id: number): Promise<void> => {

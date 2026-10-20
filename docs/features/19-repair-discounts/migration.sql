@@ -1,13 +1,13 @@
 -- Feature 19: repair discounts and persisted total price.
--- Run in the Supabase SQL editor. One transaction: any failure leaves nothing behind (SR-8).
--- No RLS, policy, grant or auth changes (SR-10).
+-- Run in the Supabase SQL editor. No RLS, policy, grant or auth changes (SR-10).
 
-begin;
+-- =================================================================================================
+-- PREFLIGHT (read-only). RUN THIS BLOCK ALONE FIRST, before the migration below.
+-- Paste its output into docs/features/19-repair-discounts/status.md, then continue only if
+-- the money columns are numeric and the null / failing-row counts are acceptable.
+-- =================================================================================================
 
--- 1. Preflight ---------------------------------------------------------------------------------
--- Paste this output into docs/features/19-repair-discounts/status.md.
-
-select table_name, column_name, data_type, numeric_precision, numeric_scale
+select table_name, column_name, data_type, numeric_precision, numeric_scale, is_nullable
 from information_schema.columns
 where table_schema = 'public'
   and ((table_name = 'repairs' and column_name = 'total_price')
@@ -21,7 +21,27 @@ where n.nspname = 'public' and c.relname in ('repairs', 'repair_items');
 
 select * from pg_policies where tablename in ('repairs', 'repair_items');
 
--- Abort unless the money columns are numeric (no type conversion is done here).
+-- Null counts (nulls fail the new constraints and abort the migration).
+select
+  (select count(*) from public.repair_items where price is null) as items_null_price,
+  (select count(*) from public.repair_items where quantity is null) as items_null_quantity,
+  (select count(*) from public.repair_items where total is null) as items_null_total,
+  (select count(*) from public.repairs where total_price is null) as repairs_null_total_price;
+
+-- Rows that would fail step 7 (backfill fixes total and total_price, so only these remain).
+select count(*) as items_failing_validation
+from public.repair_items
+where price is null or quantity is null or price < 0 or quantity <= 0;
+
+-- =================================================================================================
+-- END OF PREFLIGHT
+-- =================================================================================================
+
+-- MIGRATION. One transaction: any failure leaves nothing behind (SR-8).
+
+begin;
+
+-- 1. Guard: abort unless the money columns are numeric (no type conversion is done here) ---------
 do $$
 declare
   bad text;
@@ -38,11 +58,6 @@ begin
     raise exception 'Preflight failed, expected numeric: %', bad;
   end if;
 end $$;
-
--- Rows that would fail step 7 (backfill fixes total and total_price, so only these remain).
-select count(*) as items_failing_validation
-from public.repair_items
-where price < 0 or quantity <= 0;
 
 -- 2. Backup of old totals (SR-9) ----------------------------------------------------------------
 -- "private" is not exposed by PostgREST. If your project exposes it, also run (no policies):
@@ -96,15 +111,16 @@ alter table public.repair_items
 
 alter table public.repair_items
   add constraint repair_items_total_bounds_chk
-    check (total >= 0 and total <= round(price * quantity, 2)) not valid,
+    check (total is not null and price is not null and quantity is not null
+           and total >= 0 and total <= round(price * quantity, 2)) not valid,
   add constraint repair_items_price_nonneg_chk
-    check (price >= 0) not valid,
+    check (price is not null and price >= 0) not valid,
   add constraint repair_items_quantity_pos_chk
-    check (quantity > 0) not valid;
+    check (quantity is not null and quantity > 0) not valid;
 
 alter table public.repairs
   add constraint repairs_total_price_nonneg_chk
-    check (total_price >= 0) not valid;
+    check (total_price is not null and total_price >= 0) not valid;
 
 -- 6. Backfill (AC-15): no discounts existed, so net = gross -------------------------------------
 
