@@ -6,14 +6,16 @@ import { useBikeStore } from '@/store/bikeStore';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { TriggerRef } from '@rn-primitives/select';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Platform, StyleSheet, View } from 'react-native';
+import { Platform, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { Controller, useForm, useFieldArray } from 'react-hook-form';
 import { Label } from '@/components/ui/stock components/label';
 import { Input } from '@/components/ui/stock components/input';
 import { Text } from '@/components/ui/stock components/text';
 import { DateSelect } from '@/components/dateSelect';
 import { Button } from '@/components/ui/stock components/button';
-import { CircleArrowLeft } from 'lucide-react-native';
+import { CircleAlert, CircleArrowLeft } from 'lucide-react-native';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/stock components/alert';
+import { ERROR_TEXT_COLOR } from '@/components/ui/DiscountInput';
 import { Icon } from '@/components/ui/stock components/icon';
 import { router } from 'expo-router';
 import { Switch } from '@/components/ui/stock components/switch';
@@ -47,6 +49,7 @@ export default function CreateRepairForm({
     handleSubmit,
     watch,
     reset,
+    trigger,
     formState: { errors },
   } = useForm<Repair>({
     defaultValues: {
@@ -57,6 +60,7 @@ export default function CreateRepairForm({
       deliveryDate: repair?.deliveryDate ?? new Date(),
       complete: repair?.complete ?? false,
       items: repair?.items ?? [],
+      discount: repair?.discount ?? null,
       paymentReceived: repair?.paymentReceived ?? false,
       customerContacted: repair?.customerContacted ?? false,
     },
@@ -71,6 +75,7 @@ export default function CreateRepairForm({
       deliveryDate: repair?.deliveryDate ? new Date(repair.deliveryDate) : new Date(),
       complete: repair?.complete ?? false,
       items: repair?.items ?? [],
+      discount: repair?.discount ?? null,
       paymentReceived: repair?.paymentReceived ?? false,
       customerContacted: repair?.customerContacted ?? false,
     });
@@ -78,42 +83,39 @@ export default function CreateRepairForm({
 
 
 
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState(false);
+  const { width } = useWindowDimensions();
+  const narrow = width < 768;
+
   const [checkedComplete, setCheckedComplete] = useState(repair?.complete ?? false);
   const [checkedPayment, setCheckedPayment] = useState(repair?.paymentReceived ?? false);
 
+  // Closes the modal only on success. On failure the form keeps all values (SR-11, SR-12).
   const onSubmit = async (data: Repair) => {
     if (!customer?.id || !bike?.id) {
       console.error('Missing customer or bike');
+      setSaveError(true);
       return;
     }
-    if (data.id == 0) {
-      try {
-        await createRepair({
-          ...data,
-          customerId: customer.id,
-          bikeId: bike.id,
-        });
-
-      } catch (error) {
-        console.error(error);
-      } finally {
-        reset();
-        onSuccess?.();
-        router.back();
-        console.log(data);
-      }
-    } else {
-      try {
+    setSaveError(false);
+    setIsSaving(true);
+    try {
+      if (data.id === 0) {
+        await createRepair({ ...data, customerId: customer.id, bikeId: bike.id });
+      } else {
         await updateRepair(data.id, data);
-      } catch (error) {
-        console.error(error);
-      } finally {
-        reset();
-        onSuccess?.();
-        router.back();
-        console.log(data);
       }
+    } catch (error) {
+      console.error(error);
+      setSaveError(true);
+      setIsSaving(false);
+      return;
     }
+    setIsSaving(false);
+    reset();
+    onSuccess?.();
+    router.back();
   };
 
 
@@ -123,9 +125,15 @@ export default function CreateRepairForm({
   }
 
 
+  const submitButton = (
+    <Button className="mt-2 w-28" onPress={handleSubmit(onSubmit)} disabled={isSaving}>
+      <Text>{isSaving ? 'Gemmer…' : repair && repair.id !== 0 ? 'Opdater' : 'Opret'}</Text>
+    </Button>
+  );
+
   return (
     <View style={styles.overlay}>
-      <View style={styles.modal}>
+      <ScrollView style={styles.modal} contentContainerStyle={{ padding: 10 }}>
         <View className={'flex-row-reverse items-center gap-2'}>
           <Button
             className={'justify-self-end'}
@@ -181,7 +189,7 @@ export default function CreateRepairForm({
             <Text style={styles.error}>{errors.paymentReceived.message}</Text>
           )}
         </View>
-        <View className={'flex-row items-center gap-2'}>
+        <View style={{ flexDirection: narrow ? 'column' : 'row', gap: 8, alignItems: 'flex-start' }}>
           <View>
             {/* id */}
             <View style={styles.field}>
@@ -272,15 +280,20 @@ export default function CreateRepairForm({
               />
               {errors.note && <Text style={styles.error}>{errors.note.message}</Text>}
             </View>
-            <Button className="mt-2 w-20" onPress={handleSubmit(onSubmit)}>
-              <Text>{repair?.items?.length ? 'Opdater' : 'Opret'}</Text>
-            </Button>
+            {!narrow && submitButton}
           </View>
-          <View className={'flex-row-reverse items-center gap-2'}>
-            <RepairLinesSection control={control} />
+          <View style={{ flex: 1, alignSelf: 'stretch' }}>
+            {saveError && (
+              <Alert variant="destructive" icon={CircleAlert} className="mb-2">
+                <AlertTitle>Reparationen kunne ikke gemmes</AlertTitle>
+                <AlertDescription>Prøv igen. Dine ændringer er ikke tabt.</AlertDescription>
+              </Alert>
+            )}
+            <RepairLinesSection control={control} trigger={trigger} disabled={isSaving} />
+            {narrow && submitButton}
           </View>
         </View>
-      </View>
+      </ScrollView>
     </View>
   );
 }
@@ -296,16 +309,15 @@ const styles = StyleSheet.create({
   },
   error: {
     fontSize: 12,
-    color: '#E24B4A',
+    color: ERROR_TEXT_COLOR,
   },
   modal: {
     width: '90%',
     maxWidth: 1500,
-    maxHeight: 1500,
+    maxHeight: '90%',
     backgroundColor: 'white',
     borderRadius: 12,
     overflow: 'hidden',
-    padding: 10,
   },
   overlay: {
     flex: 1,
