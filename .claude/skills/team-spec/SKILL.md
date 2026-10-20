@@ -1,7 +1,7 @@
 ---
 name: team-spec
 description: Run only the specification phase of the dev team. The spec-writer drafts the spec, then the security-expert and ui-ux-advisor review it in design mode. Use when the user wants a spec, PRD or threat model for a feature without building it yet, or types /team-spec <feature request>.
-argument-hint: <feature request>
+argument-hint: <feature request> | #<issue> | <issue URL>
 ---
 
 Run **Phase 0 (Intake)** and **Phase 1 (Specification)** from the `team-lead` skill (`.claude/skills/team-lead/SKILL.md`) for: $ARGUMENTS

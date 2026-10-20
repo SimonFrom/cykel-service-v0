@@ -3,6 +3,7 @@
 ```yaml
 slug: <slug>
 request: "<original feature request>"
+issue:          # GitHub issue URL, if started from one
 base: main
 branch: feature/<slug>
 phase: intake   # intake | spec | gate1 | plan | build | review | fix | docs | gate2 | done | escalated
