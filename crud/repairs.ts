@@ -2,8 +2,7 @@
 import { supabase } from '@/utils/supabase';
 import { Repair } from '@/types/repair';
 import { RepairItem } from '@/types/repairItems';
-import { useCustomerStore } from '@/store/customerStore';
-import { useBikeStore } from '@/store/bikeStore';
+
 
 
 // Helpers to keep mapping in one place
@@ -38,6 +37,17 @@ export const getRepairs = async (bikeId: number): Promise<Repair[]> => {
     .from('repairs')
     .select('*, repair_items(*)')
     .eq('bike_id', bikeId)
+
+  if (error) throw error;
+
+  return (data ?? []).map((row) => mapRepairRow(row, (row.repair_items ?? []).map(mapItemRow)));
+};
+
+export const getAllRepairs = async (): Promise<Repair[]> => {
+  // One round-trip using a nested select — supabase pulls items in the same query
+  const { data, error } = await supabase
+    .from('repairs')
+    .select('*, repair_items(*)')
 
   if (error) throw error;
 

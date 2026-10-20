@@ -12,7 +12,6 @@ import { Badge, badgeVariants } from '@/components/ui/badge';
 import { router, useFocusEffect } from 'expo-router';
 import { Icon } from '@/components/ui/stock components/icon';
 import { CircleArrowLeft } from 'lucide-react-native';
-import { getRepairs } from '@/crud/repairs';
 import { Repair } from '@/types/repair';
 import Animated, { LinearTransition } from 'react-native-reanimated';
 import { DeleteConfirmationDialog } from '@/components/ui/deleteConfirmation';
@@ -24,17 +23,18 @@ export default function BikeInfoScreen() {
   const bike = useBikeStore((s) => s.selectedBike);
   const customer = useCustomerStore((s) => s.selectedCustomer);
 
-  const repairs = useRepairStore((s) => s.repairs);
+  const allRepairs = useRepairStore((s) => s.repairs);
+  const fetchRepairs = useRepairStore((s) => s.fetchRepairs);
   const deleteRepairInStore = useRepairStore((s) => s.deleteRepair);
-  const setRepairsInStore = useRepairStore((s) => s.setRepairsInStore);
   const setRepairInStore = useRepairStore((s) => s.setSelectedRepair);
 
-  const fetchRepairs = async () => {
-    if (bike?.id) {
-      const repairs = await getRepairs(bike.id);
-      setRepairsInStore(repairs);
-    }
-  };
+  const repairs = allRepairs.filter((r) => r.bikeId === bike?.id);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchRepairs();
+    }, [fetchRepairs])
+  );
 
   useFocusEffect(
     useCallback(() => {
@@ -63,7 +63,7 @@ export default function BikeInfoScreen() {
     <SafeAreaView style={{ flex: 1 }}>
       <View>
         <Button
-          className={'w-15 mr-5 mt-5 ml-auto'}
+          className={'w-15 ml-auto mr-5 mt-5'}
           variant={'destructive'}
           onPress={() => router.push('/customers/${customer.id}')}>
           <Icon as={CircleArrowLeft} className="text-primary-foreground" />
@@ -82,43 +82,43 @@ export default function BikeInfoScreen() {
         <Button className="ml-5 mr-auto" onPress={() => handleCreateRepair()}>
           <Text>Opret reparation</Text>
         </Button>
-          <Animated.FlatList
-            data={repairs}
-            itemLayoutAnimation={LinearTransition}
-            keyExtractor={(item) => item.id.toString()}
-            contentContainerStyle={styles.list}
-            ItemSeparatorComponent={() => <View style={styles.separator} />}
-            scrollEnabled={true}
-            showsHorizontalScrollIndicator={true}
-            renderItem={({ item }) => (
-              <View style={styles.row}>
-                <View className='col gap-2'>
-                  {/* TODO: Switch now works, but the value for paymentReceived is not updated in the form. Need to figure out how to fix this. */}
-                  <Badge variant={item.paymentReceived ? 'default' : 'destructive'}>
-                    <Text>{item.paymentReceived ? 'Betalt' : 'Ikke betalt'}</Text>
-                  </Badge>
-                  <Badge variant={item.complete ? 'default' : 'destructive'}>
-                    <Text>{item.complete ? 'Udleveret' : 'Ikke udleveret'}</Text>
-                  </Badge>
-                </View>
-                <View style={styles.info}>
-                  <Text style={styles.name}>Reperations nummer: {item.id}</Text>
-                  <Text style={styles.name}>Total pris: {item.totalPrice} kr</Text>
-                  <Text style={styles.name}>Oprettet: {item.createdAt.toLocaleDateString()}</Text>
-                </View>
-                <Button onPress={() => handleShowRepair(item)}>
-                  <Text>Vis</Text>
-                </Button>
-                <DeleteConfirmationDialog
-                  title={'Er du sikker?'}
-                  buttonTitle={'Slet'}
-                  content={`Vil du virkelig slette reperation nr ${item.id}?`}
-                  onConfirm={() => handleDelete(item.id)}
-                />
+        <Animated.FlatList
+          data={repairs}
+          itemLayoutAnimation={LinearTransition}
+          keyExtractor={(item) => item.id.toString()}
+          contentContainerStyle={styles.list}
+          ItemSeparatorComponent={() => <View style={styles.separator} />}
+          scrollEnabled={true}
+          showsHorizontalScrollIndicator={true}
+          renderItem={({ item }) => (
+            <View style={styles.row}>
+              <View className="col gap-2">
+                {/* TODO: Switch now works, but the value for paymentReceived is not updated in the form. Need to figure out how to fix this. */}
+                <Badge variant={item.paymentReceived ? 'default' : 'destructive'}>
+                  <Text>{item.paymentReceived ? 'Betalt' : 'Ikke betalt'}</Text>
+                </Badge>
+                <Badge variant={item.complete ? 'default' : 'destructive'}>
+                  <Text>{item.complete ? 'Udleveret' : 'Ikke udleveret'}</Text>
+                </Badge>
               </View>
-            )}
-          />
-        </View>
+              <View style={styles.info}>
+                <Text style={styles.name}>Reperations nummer: {item.id}</Text>
+                <Text style={styles.name}>Total pris: {item.totalPrice} kr</Text>
+                <Text style={styles.name}>Oprettet: {item.createdAt.toLocaleDateString()}</Text>
+              </View>
+              <Button onPress={() => handleShowRepair(item)}>
+                <Text>Vis</Text>
+              </Button>
+              <DeleteConfirmationDialog
+                title={'Er du sikker?'}
+                buttonTitle={'Slet'}
+                content={`Vil du virkelig slette reperation nr ${item.id}?`}
+                onConfirm={() => handleDelete(item.id)}
+              />
+            </View>
+          )}
+        />
+      </View>
     </SafeAreaView>
   );
 }
