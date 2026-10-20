@@ -3,11 +3,9 @@ import { TextInput, View } from 'react-native';
 import { Button } from '@/components/ui/stock components/button';
 import { Input } from '@/components/ui/stock components/input';
 import { Text } from '@/components/ui/stock components/text';
+import { ERROR_TEXT_COLOR } from '@/lib/theme';
 import { cn } from '@/lib/utils';
 import type { Discount, DiscountType } from '@/types/discount';
-
-// 5.6:1 on white (AA), replaces #E24B4A (3.9:1)
-export const ERROR_TEXT_COLOR = '#C62828';
 
 const DECIMAL_RE = /^\d{1,8}([.,]\d{1,2})?$/;
 const NEGATIVE_RE = /^-\d{1,8}([.,]\d{1,2})?$/;
@@ -56,7 +54,7 @@ type Props = {
   large?: boolean;
 };
 
-// Value input plus a %/kr radiogroup. Keeps the raw text locally so "12," can be typed.
+// Value input plus a %/kr toggle group. Keeps the raw text locally so "12," can be typed.
 export function DiscountInput({
   value,
   onChange,
@@ -92,8 +90,8 @@ export function DiscountInput({
   };
 
   const options: { type: DiscountType; text: string; name: string }[] = [
-    { type: 'percent', text: '%', name: 'Procent' },
-    { type: 'amount', text: 'kr', name: 'Kroner' },
+    { type: 'percent', text: '%', name: '% (procent)' },
+    { type: 'amount', text: 'kr', name: 'kr (kroner)' },
   ];
 
   return (
@@ -117,14 +115,13 @@ export function DiscountInput({
             className={cn(large && 'h-11')}
           />
         </View>
-        <View role="radiogroup" aria-label={groupLabel} style={{ flexDirection: 'row', gap: 2 }}>
+        <View role="group" aria-label={groupLabel} style={{ flexDirection: 'row', gap: 2 }}>
           {options.map((o) => (
             <Button
               key={o.type}
               size="sm"
               variant={type === o.type ? 'default' : 'outline'}
-              role="radio"
-              aria-checked={type === o.type}
+              aria-pressed={type === o.type}
               aria-label={o.name}
               disabled={disabled}
               onPress={() => handleType(o.type)}

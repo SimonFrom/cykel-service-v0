@@ -7,8 +7,10 @@ import { Input } from '@/components/ui/stock components/input';
 import { Label } from '@/components/ui/stock components/label';
 import { Text } from '@/components/ui/stock components/text';
 import { Icon } from '@/components/ui/stock components/icon';
-import { DiscountInput, ERROR_TEXT_COLOR, refProp } from '@/components/ui/DiscountInput';
-import { calculateLineTotals, calculateRepairTotals, validateDiscount } from '@/lib/repairPricing';
+import { DiscountInput, refProp } from '@/components/ui/DiscountInput';
+import { tryCalculateRepairTotals, validateDiscount } from '@/lib/repairPricing';
+import { ERROR_TEXT_COLOR } from '@/lib/theme';
+import { cn } from '@/lib/utils';
 import type { RepairTotals } from '@/lib/repairPricing';
 import type { Discount } from '@/types/discount';
 import { Repair } from '@/types/repair';
@@ -28,49 +30,118 @@ const NARROW_BREAKPOINT = 768;
 const money = (n: number) => n.toFixed(2);
 const minusMoney = (n: number) => (n > 0 ? `−${money(n)}` : money(0));
 
+const NUMBER_RE = /^-?\d{1,8}([.,]\d{1,2})?$/;
+
+// Strict parse of quantity/price text. Anything else (incl. empty) -> NaN, reported by the validator.
+export function parseNumberText(text: string): number {
+  const trimmed = text.trim();
+  return NUMBER_RE.test(trimmed) ? Number(trimmed.replace(',', '.')) : NaN;
+}
+
+function formatNumber(value: number): string {
+  return Number.isFinite(value) ? String(value).replace('.', ',') : '';
+}
+
+const validateQuantity = (v: number) =>
+  !Number.isFinite(v) ? 'Ugyldigt tal' : v > 0 ? true : 'Antal skal være større end 0';
+const validatePrice = (v: number) =>
+  !Number.isFinite(v) ? 'Ugyldigt tal' : v >= 0 ? true : 'Pris skal være 0 eller mere';
+
+// Replaces unusable price/quantity with a neutral line so the display never throws while typing.
+function usable(items: PricedItem[]): PricedItem[] {
+  return items.map((i) =>
+    Number.isFinite(i.price) && i.price >= 0 && Number.isFinite(i.quantity) && i.quantity > 0
+      ? i
+      : { price: 0, quantity: 1, discount: null }
+  );
+}
+
+// Totals for display: drops invalid discounts (lines first, then repair level) instead of throwing.
+function displayTotals(items: PricedItem[], discount: Discount | null): RepairTotals {
+  const base = usable(items);
+  const noLineDiscounts = base.map((i) => ({ ...i, discount: null }));
+  return (
+    tryCalculateRepairTotals(base, discount) ??
+    tryCalculateRepairTotals(noLineDiscounts, discount) ??
+    tryCalculateRepairTotals(base, null) ??
+    tryCalculateRepairTotals(noLineDiscounts, null) ?? {
+      lines: base.map(() => ({ gross: 0, discount: 0, net: 0 })),
+      subtotal: 0,
+      repairDiscount: 0,
+      total: 0,
+    }
+  );
+}
+
 // Gross of a line in DKK, 0 when price or quantity are unusable.
 function lineBase(item?: PricedItem): number {
-  try {
-    return calculateLineTotals({ ...item!, discount: null }).gross;
-  } catch {
-    return 0;
-  }
-}
-
-// Same result as calculateRepairTotals, but never throws: invalid parts count as 0 / no discount,
-// so the display never shows NaN or negative numbers while the user is still typing.
-function safeTotals(items: PricedItem[], discount: Discount | null): RepairTotals {
-  try {
-    return calculateRepairTotals(items, discount);
-  } catch {
-    const lines = items.map((item) => {
-      try {
-        return calculateLineTotals(item);
-      } catch {
-        try {
-          return calculateLineTotals({ ...item, discount: null });
-        } catch {
-          return { gross: 0, discount: 0, net: 0 };
-        }
-      }
-    });
-    const subtotal = Math.round(lines.reduce((s, l) => s + l.net, 0) * 100) / 100;
-    try {
-      return { ...calculateRepairTotals([], null), ...withRepair(lines, subtotal, discount) };
-    } catch {
-      return { lines, subtotal, repairDiscount: 0, total: subtotal };
-    }
-  }
-}
-
-function withRepair(lines: RepairTotals['lines'], subtotal: number, discount: Discount | null) {
-  const t = calculateRepairTotals([{ price: subtotal, quantity: 1, discount: null }], discount);
-  return { lines, subtotal, repairDiscount: t.repairDiscount, total: t.total };
+  return displayTotals(item ? [{ ...item, discount: null }] : [], null).lines[0]?.gross ?? 0;
 }
 
 // Subtotal (after line discounts) used as base for the repair discount.
 function subtotalOf(items: PricedItem[] | undefined): number {
-  return safeTotals(items ?? [], null).subtotal;
+  return displayTotals(items ?? [], null).subtotal;
+}
+
+type NumberFieldProps = {
+  value: number;
+  onChange: (n: number) => void;
+  onBlur: () => void;
+  label?: string;
+  labelledBy?: string;
+  error?: string;
+  errorId: string;
+  disabled?: boolean;
+  large?: boolean;
+};
+
+// Quantity/price input. Keeps the raw text so "12," can be typed; the form gets the strict parse.
+function NumberField({
+  value,
+  onChange,
+  onBlur,
+  label,
+  labelledBy,
+  error,
+  errorId,
+  disabled,
+  large,
+}: NumberFieldProps) {
+  const [raw, setRaw] = useState(formatNumber(value));
+
+  // Sync when the form value changes from outside (reset, edit)
+  useEffect(() => {
+    if (Object.is(parseNumberText(raw), value)) return;
+    setRaw(formatNumber(value));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value]);
+
+  return (
+    <View>
+      <Input
+        value={raw}
+        onChangeText={(t) => {
+          setRaw(t);
+          onChange(parseNumberText(t));
+        }}
+        onBlur={onBlur}
+        keyboardType="numeric"
+        inputMode="decimal"
+        autoComplete="off"
+        editable={!disabled}
+        aria-label={labelledBy ? undefined : label}
+        aria-labelledby={labelledBy}
+        aria-invalid={error ? true : undefined}
+        aria-describedby={error ? errorId : undefined}
+        className={cn(large && 'h-11')}
+      />
+      {error ? (
+        <Text nativeID={errorId} style={{ fontSize: 12, color: ERROR_TEXT_COLOR }}>
+          {error}
+        </Text>
+      ) : null}
+    </View>
+  );
 }
 
 export function RepairLinesSection({ control, trigger, disabled }: Props) {
@@ -86,22 +157,30 @@ export function RepairLinesSection({ control, trigger, disabled }: Props) {
   const [focusTarget, setFocusTarget] = useState<number | 'add' | null>(null);
 
   const items: PricedItem[] = (watchedItems ?? []).map((i) => ({
-    price: Number(i?.price) || 0,
-    quantity: Number(i?.quantity) || 0,
+    price: i?.price ?? NaN,
+    quantity: i?.quantity ?? NaN,
     discount: i?.discount ?? null,
   }));
-  const totals = safeTotals(items, repairDiscount);
+  const totals = displayTotals(items, repairDiscount);
   const showFooter = fields.length > 0 || repairDiscount != null;
 
-  // Revalidate discounts when the base changes (AC-6 / ux 5.4)
-  const baseKey = JSON.stringify(
-    (watchedItems ?? []).map((i) => [i?.price, i?.quantity, i?.discount?.value])
-  );
+  // Revalidate on any change to price, quantity or discounts (value and type; NaN stays distinct)
+  const discountKey = (d?: Discount | null) => (d ? `${d.type}:${String(d.value)}` : '-');
+  const baseKey = JSON.stringify([
+    (watchedItems ?? []).map((i) => [
+      String(i?.price),
+      String(i?.quantity),
+      discountKey(i?.discount),
+    ]),
+    discountKey(repairDiscount),
+  ]);
   useEffect(() => {
     if (!trigger) return;
-    const names = (watchedItems ?? []).flatMap((item, i) =>
-      item?.discount ? ([`items.${i}.discount`] as const) : []
-    );
+    const names = (watchedItems ?? []).flatMap((item, i) => [
+      `items.${i}.quantity` as const,
+      `items.${i}.price` as const,
+      ...(item?.discount ? ([`items.${i}.discount`] as const) : []),
+    ]);
     const all = repairDiscount ? [...names, 'discount' as const] : names;
     if (all.length > 0) void trigger(all);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -188,7 +267,7 @@ export function RepairLinesSection({ control, trigger, disabled }: Props) {
                   narrow ? styles.lineCard : styles.lineRow,
                   fieldState.error && styles.lineRowError,
                 ]}>
-                <View style={cell(3)}>
+                <View style={[cell(3), narrow && { paddingRight: 48 }]}>
                   {label('Beskrivelse', `title-${field.id}`)}
                   <Controller
                     control={control}
@@ -210,21 +289,24 @@ export function RepairLinesSection({ control, trigger, disabled }: Props) {
                   />
                 </View>
 
-                <View style={narrow ? styles.pairRow : { flex: 2 }}>
+                <View style={narrow ? styles.pairRow : { flex: 2, flexDirection: 'row' }}>
                   <View style={cell(1)}>
                     {label('Antal', `qty-${field.id}`)}
                     <Controller
                       control={control}
                       name={`items.${index}.quantity`}
-                      render={({ field: { onChange, onBlur, value } }) => (
-                        <Input
+                      rules={{ validate: validateQuantity }}
+                      render={({ field: { onChange, onBlur, value }, fieldState }) => (
+                        <NumberField
+                          value={value}
+                          onChange={onChange}
                           onBlur={onBlur}
-                          onChangeText={(t) => onChange(Number(t) || 0)}
-                          value={value?.toString() ?? ''}
-                          keyboardType="numeric"
-                          editable={!disabled}
-                          aria-label={narrow ? undefined : `Antal for ${name}`}
-                          aria-labelledby={narrow ? `qty-${field.id}` : undefined}
+                          label={`Antal for ${name}`}
+                          labelledBy={narrow ? `qty-${field.id}` : undefined}
+                          error={fieldState.error?.message}
+                          errorId={`qty-err-${field.id}`}
+                          disabled={disabled}
+                          large={narrow}
                         />
                       )}
                     />
@@ -234,15 +316,18 @@ export function RepairLinesSection({ control, trigger, disabled }: Props) {
                     <Controller
                       control={control}
                       name={`items.${index}.price`}
-                      render={({ field: { onChange, onBlur, value } }) => (
-                        <Input
+                      rules={{ validate: validatePrice }}
+                      render={({ field: { onChange, onBlur, value }, fieldState }) => (
+                        <NumberField
+                          value={value}
+                          onChange={onChange}
                           onBlur={onBlur}
-                          onChangeText={(t) => onChange(Number(t) || 0)}
-                          value={value?.toString() ?? ''}
-                          keyboardType="numeric"
-                          editable={!disabled}
-                          aria-label={narrow ? undefined : `Pris for ${name}`}
-                          aria-labelledby={narrow ? `price-${field.id}` : undefined}
+                          label={`Pris for ${name}`}
+                          labelledBy={narrow ? `price-${field.id}` : undefined}
+                          error={fieldState.error?.message}
+                          errorId={`price-err-${field.id}`}
+                          disabled={disabled}
+                          large={narrow}
                         />
                       )}
                     />
@@ -282,7 +367,7 @@ export function RepairLinesSection({ control, trigger, disabled }: Props) {
                   aria-label={`Fjern linje ${name}`}
                   disabled={disabled}
                   onPress={() => handleRemove(index)}
-                  style={{ width: 40 }}>
+                  style={narrow ? styles.trashNarrow : { width: 40 }}>
                   <Icon as={Trash2} className="text-primary-foreground" />
                 </Button>
               </View>
@@ -374,6 +459,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#e5e5e5',
     borderRadius: 8,
+  },
+  trashNarrow: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    width: 44,
+    height: 44,
   },
   pairRow: {
     flexDirection: 'row',
