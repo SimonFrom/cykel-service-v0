@@ -1,5 +1,5 @@
 import { Repair } from '@/types/repair';
-import { createRepair, updateRepair } from '@/crud/repairs';
+import { createRepair, RepairSaveError, updateRepair } from '@/crud/repairs';
 import { RepairLinesSection } from '@/components/ui/RepairLinesSection';
 import { useCustomerStore } from '@/store/customerStore';
 import { useBikeStore } from '@/store/bikeStore';
@@ -15,7 +15,7 @@ import { DateSelect } from '@/components/dateSelect';
 import { Button } from '@/components/ui/stock components/button';
 import { CircleAlert, CircleArrowLeft } from 'lucide-react-native';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/stock components/alert';
-import { ERROR_TEXT_COLOR } from '@/components/ui/DiscountInput';
+import { ERROR_TEXT_COLOR } from '@/lib/theme';
 import { Icon } from '@/components/ui/stock components/icon';
 import { router } from 'expo-router';
 import { Switch } from '@/components/ui/stock components/switch';
@@ -42,13 +42,15 @@ export default function CreateRepairForm({
   const bike = useBikeStore((s) => s.selectedBike);
   const repair = useRepairStore((s) => s.selectedRepair);
   const setSelectedRepairInStore = useRepairStore((s) => s.setSelectedRepair);
-  const updateRepairInStore = useRepairStore((s) => s.updateRepairInStore)
+  const updateRepairInStore = useRepairStore((s) => s.updateRepairInStore);
+  const addRepairToStore = useRepairStore((s) => s.addRepairToStore);
 
   const {
     control,
     handleSubmit,
     watch,
     reset,
+    setValue,
     trigger,
     formState: { errors },
   } = useForm<Repair>({
@@ -88,8 +90,15 @@ export default function CreateRepairForm({
   const { width } = useWindowDimensions();
   const narrow = width < 768;
 
-  const [checkedComplete, setCheckedComplete] = useState(repair?.complete ?? false);
-  const [checkedPayment, setCheckedPayment] = useState(repair?.paymentReceived ?? false);
+  const submitRef = useRef<View>(null);
+  const [focusSubmit, setFocusSubmit] = useState(false);
+
+  // Return focus to the submit button after a failed save, once it is enabled again
+  useEffect(() => {
+    if (!focusSubmit || isSaving) return;
+    submitRef.current?.focus();
+    setFocusSubmit(false);
+  }, [focusSubmit, isSaving]);
 
   // Closes the modal only on success. On failure the form keeps all values (SR-11, SR-12).
   const onSubmit = async (data: Repair) => {
@@ -102,14 +111,17 @@ export default function CreateRepairForm({
     setIsSaving(true);
     try {
       if (data.id === 0) {
-        await createRepair({ ...data, customerId: customer.id, bikeId: bike.id });
+        addRepairToStore(await createRepair({ ...data, customerId: customer.id, bikeId: bike.id }));
       } else {
-        await updateRepair(data.id, data);
+        updateRepairInStore(await updateRepair(data.id, data));
       }
     } catch (error) {
       console.error(error);
+      // The repair row exists but its items failed: retry must update, not create again
+      if (error instanceof RepairSaveError) setValue('id', error.repairId);
       setSaveError(true);
       setIsSaving(false);
+      setFocusSubmit(true);
       return;
     }
     setIsSaving(false);
@@ -126,8 +138,12 @@ export default function CreateRepairForm({
 
 
   const submitButton = (
-    <Button className="mt-2 w-28" onPress={handleSubmit(onSubmit)} disabled={isSaving}>
-      <Text>{isSaving ? 'Gemmer…' : repair && repair.id !== 0 ? 'Opdater' : 'Opret'}</Text>
+    <Button
+      {...({ ref: submitRef } as object)}
+      className="mt-2 w-28"
+      onPress={handleSubmit(onSubmit)}
+      disabled={isSaving}>
+      <Text>{isSaving ? 'Gemmer…' : watch('id') !== 0 ? 'Opdater' : 'Opret'}</Text>
     </Button>
   );
 
@@ -285,8 +301,10 @@ export default function CreateRepairForm({
           <View style={{ flex: 1, alignSelf: 'stretch' }}>
             {saveError && (
               <Alert variant="destructive" icon={CircleAlert} className="mb-2">
-                <AlertTitle>Reparationen kunne ikke gemmes</AlertTitle>
-                <AlertDescription>Prøv igen. Dine ændringer er ikke tabt.</AlertDescription>
+                <AlertTitle style={{ color: ERROR_TEXT_COLOR }}>Reparationen kunne ikke gemmes</AlertTitle>
+                <AlertDescription style={{ color: ERROR_TEXT_COLOR }}>
+                  Prøv igen. Dine ændringer er ikke tabt.
+                </AlertDescription>
               </Alert>
             )}
             <RepairLinesSection control={control} trigger={trigger} disabled={isSaving} />
@@ -299,10 +317,6 @@ export default function CreateRepairForm({
 }
 
 const styles = StyleSheet.create({
-  container: {
-    padding: 24,
-    gap: 16,
-  },
   field: {
     gap: 4,
     maxWidth: 220,

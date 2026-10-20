@@ -130,3 +130,6 @@ export function validateDiscount(discount: Discount | null, base: number): strin
   }
   return 'Ugyldigt tal';
 }
+
+// TEMPORARY STUB (replaced by backend contract v3)
+export function tryCalculateRepairTotals(items: Parameters<typeof calculateRepairTotals>[0], discount: Parameters<typeof calculateRepairTotals>[1]): RepairTotals | null { try { return calculateRepairTotals(items, discount); } catch { return null; } }

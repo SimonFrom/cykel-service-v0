@@ -228,3 +228,6 @@ export const deleteRepair = async (id: number): Promise<void> => {
 
   if (error) throw error;
 };
+
+// TEMPORARY STUB (replaced by backend contract v3)
+export class RepairSaveError extends Error { constructor(message: string, public repairId: number, options?: { cause?: unknown }) { super(message, options); } }
