@@ -1,5 +1,4 @@
 import {Repair} from "@/types/repair";
-import {Customer} from "@/types/customer";
 
 export type Bike = {
   id: number;
@@ -17,6 +16,7 @@ export const bikeTypes = [
   { label: 'Shopping', value: 'shoppping' },
   { label: 'Børne', value: 'kid' },
   { label: 'Racer', value: 'racer' },
+  { label: 'Elcykel', value: 'electric' }
 ] as const;
 
 export type BikeTypes = typeof bikeTypes[number]['value'];

@@ -18,6 +18,7 @@ export type Repair = {
     complete: boolean
     paymentReceived: boolean
     customerContacted: boolean
+    missingItems: boolean
 
 }
 

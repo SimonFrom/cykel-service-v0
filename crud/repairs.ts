@@ -30,6 +30,7 @@ type RepairRow = {
   complete: boolean;
   payment_recieved: boolean;
   customerContacted: boolean;
+  missing_items: boolean;
   repair_items?: RepairItemRow[] | null;
 };
 
@@ -100,6 +101,7 @@ const mapRepairRow = (row: RepairRow): Repair => ({
   complete: row.complete,
   paymentReceived: row.payment_recieved,
   customerContacted: row.customerContacted,
+  missingItems: row.missing_items,
 });
 
 type PreparedRepair = {
@@ -199,6 +201,7 @@ export const createRepair = async (repair: Omit<Repair, 'id'>): Promise<Repair> 
       complete: repair.complete,
       payment_recieved: repair.paymentReceived,
       customerContacted: repair.customerContacted,
+      missing_items: repair.missingItems,
     })
     .select('id')
     .single();
@@ -246,6 +249,7 @@ export const updateRepair = async (id: number, repair: Repair): Promise<Repair> 
       complete: repair.complete,
       payment_recieved: repair.paymentReceived,
       customerContacted: repair.customerContacted,
+      missing_items: repair.missingItems,
       // note: createdAt is intentionally not updated
     })
     .eq('id', id);

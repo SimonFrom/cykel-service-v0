@@ -65,6 +65,7 @@ export default function CreateRepairForm({
       discount: repair?.discount ?? null,
       paymentReceived: repair?.paymentReceived ?? false,
       customerContacted: repair?.customerContacted ?? false,
+      missingItems: repair?.missingItems ?? false,
     },
   });
 
@@ -80,10 +81,9 @@ export default function CreateRepairForm({
       discount: repair?.discount ?? null,
       paymentReceived: repair?.paymentReceived ?? false,
       customerContacted: repair?.customerContacted ?? false,
+      missingItems: repair?.missingItems ?? false,
     });
   }, [repair, reset]);
-
-
 
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState(false);
@@ -102,6 +102,7 @@ export default function CreateRepairForm({
 
   // Closes the modal only on success. On failure the form keeps all values (SR-11, SR-12).
   const onSubmit = async (data: Repair) => {
+    console.log('Submitting repair data:', data);
     if (!customer?.id || !bike?.id) {
       console.error('Missing customer or bike');
       setSaveError(true);
@@ -130,12 +131,10 @@ export default function CreateRepairForm({
     router.back();
   };
 
-
   const handleBack = () => {
-    setSelectedRepairInStore(null)
+    setSelectedRepairInStore(null);
     router.back();
-  }
-
+  };
 
   const submitButton = (
     <Button
@@ -159,6 +158,23 @@ export default function CreateRepairForm({
           </Button>
         </View>
         <View className={'mb-1 flex-row items-center gap-2'}>
+          <Label nativeID="missingItems">Mangler varer:</Label>
+          <Controller
+            control={control}
+            name="missingItems"
+            render={({ field: { onBlur, value, onChange } }) => (
+              <Switch
+                id="missingItems"
+                onBlur={onBlur}
+                checked={value ?? false}
+                onCheckedChange={(checked) => {
+                  onChange(checked);
+                }}
+                className={value ?? false ? 'bg-red-500' : ''}
+                aria-labelledby="missingItems"
+              />
+            )}
+          />
           <Label nativeID="complete">Færdig:</Label>
           <Controller
             control={control}
@@ -168,7 +184,9 @@ export default function CreateRepairForm({
                 id="complete"
                 onBlur={onBlur}
                 checked={value ?? false}
-                onCheckedChange={(checked) => {onChange(checked)}}
+                onCheckedChange={(checked) => {
+                  onChange(checked);
+                }}
                 aria-labelledby="complete"
               />
             )}
@@ -182,7 +200,9 @@ export default function CreateRepairForm({
                 id="paymentReceived"
                 onBlur={onBlur}
                 checked={value ?? false}
-                onCheckedChange={(checked) => {onChange(checked)}}
+                onCheckedChange={(checked) => {
+                  onChange(checked);
+                }}
                 aria-labelledby="paymentReceived"
               />
             )}
@@ -196,7 +216,9 @@ export default function CreateRepairForm({
                 id="customerContacted"
                 onBlur={onBlur}
                 checked={value ?? false}
-                onCheckedChange={(checked) => {onChange(checked)}}
+                onCheckedChange={(checked) => {
+                  onChange(checked);
+                }}
                 aria-labelledby="customerContacted"
               />
             )}
@@ -205,7 +227,8 @@ export default function CreateRepairForm({
             <Text style={styles.error}>{errors.paymentReceived.message}</Text>
           )}
         </View>
-        <View style={{ flexDirection: narrow ? 'column' : 'row', gap: 8, alignItems: 'flex-start' }}>
+        <View
+          style={{ flexDirection: narrow ? 'column' : 'row', gap: 8, alignItems: 'flex-start' }}>
           <View>
             {/* id */}
             <View style={styles.field}>
@@ -234,11 +257,7 @@ export default function CreateRepairForm({
                 name="createdAt"
                 defaultValue={new Date()}
                 render={({ field: { onChange, onBlur, value } }) => (
-                  <DateSelect
-                    value={value ?? new Date()}
-                    onValueChange={onChange}
-                    
-                  />
+                  <DateSelect value={value ?? new Date()} onValueChange={onChange} />
                 )}
               />
               {errors.createdAt && <Text style={styles.error}>{errors.createdAt.message}</Text>}
@@ -251,10 +270,7 @@ export default function CreateRepairForm({
                 name="intakeDate"
                 defaultValue={new Date()}
                 render={({ field: { onChange, onBlur, value } }) => (
-                  <DateSelect
-                    value={value ?? new Date()}
-                    onValueChange={onChange}
-                  />
+                  <DateSelect value={value ?? new Date()} onValueChange={onChange} />
                 )}
               />
               {errors.intakeDate && <Text style={styles.error}>{errors.intakeDate.message}</Text>}
@@ -268,10 +284,7 @@ export default function CreateRepairForm({
                 name="deliveryDate"
                 defaultValue={new Date()}
                 render={({ field: { onChange, onBlur, value } }) => (
-                  <DateSelect
-                    value={value ?? new Date()}
-                    onValueChange={onChange}
-                  />
+                  <DateSelect value={value ?? new Date()} onValueChange={onChange} />
                 )}
               />
               {errors.deliveryDate && (
@@ -301,7 +314,9 @@ export default function CreateRepairForm({
           <View style={{ flex: 1, alignSelf: 'stretch' }}>
             {saveError && (
               <Alert variant="destructive" icon={CircleAlert} className="mb-2">
-                <AlertTitle style={{ color: ERROR_TEXT_COLOR }}>Reparationen kunne ikke gemmes</AlertTitle>
+                <AlertTitle style={{ color: ERROR_TEXT_COLOR }}>
+                  Reparationen kunne ikke gemmes
+                </AlertTitle>
                 <AlertDescription style={{ color: ERROR_TEXT_COLOR }}>
                   Prøv igen. Dine ændringer er ikke tabt.
                 </AlertDescription>

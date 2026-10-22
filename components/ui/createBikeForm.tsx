@@ -21,6 +21,7 @@ import {
 import { Button } from '@/components/ui/stock components/button';
 import { useBikeStore } from '@/store/bikeStore';
 import { router } from 'expo-router';
+import { cn } from '@/lib/utils';
 
 
 
@@ -166,7 +167,11 @@ export function CreateBikeForm({ onSuccess, bike }: { onSuccess?: () => void; bi
                 <SelectGroup>
                   <SelectLabel>Cykel typer</SelectLabel>
                   {bikeTypes.map((bikeType) => (
-                    <SelectItem key={bikeType.value} label={bikeType.label} value={bikeType.value}>
+                    <SelectItem
+                      key={bikeType.value}
+                      label={bikeType.label}
+                      value={bikeType.value}
+                      className={cn(bikeType.value === value && 'bg-primary/10')}>
                       {bikeType.label}
                     </SelectItem>
                   ))}
