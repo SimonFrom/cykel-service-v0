@@ -14,6 +14,7 @@ import { getCustomers } from '@/crud/customers';
 import { useCallback } from 'react';
 import { Customer } from '@/types/customer';
 import RecentRepairCard from '@/components/ui/recentRepairCard';
+import mbcykelservice from '@/assets/mbcykelservice.jpg';
 
 // const LOGO = {
 //   light: require('@/assets/images/react-native-reusables-light.png'),
@@ -58,6 +59,13 @@ export default function Screen() {
       <View className="items-center justify-start gap-8 p-4">
         {/* <Image source={LOGO[colorScheme ?? 'light']} style={IMAGE_STYLE} resizeMode="contain" /> */}
         <View className="gap-2 p-4">
+          <Image
+            source={mbcykelservice}
+            alt="Magtenbølle Cykelservice Logo"
+            style={{ width: 200, height: 100, backgroundColor: 'transparent' }}
+            resizeMode="contain"
+
+          />
           <Text className="ios:text-foreground heading font-mono text-primary">
             Magtenbølle Cykelservice
           </Text>

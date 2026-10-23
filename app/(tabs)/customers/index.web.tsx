@@ -12,6 +12,8 @@ import { ArrowDown, ArrowUp, ArrowUpDown, Plus, Search, Users, X } from 'lucide-
 import * as React from 'react';
 import { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, View } from 'react-native';
+import mbcykelservice from '@/assets/mbcykelservice.jpg';
+import { Image } from 'react-native';
 
 const SCREEN_OPTIONS = {
   title: 'Kunder',
@@ -120,6 +122,12 @@ export default function Screen() {
       <ScrollView className="flex-1 bg-background" contentContainerClassName="p-4 md:p-8">
         <View className="mx-auto w-full max-w-5xl gap-6">
           <View className="flex-row flex-wrap items-end justify-between gap-4">
+            <Image
+              source={mbcykelservice}
+              alt="Magtenbølle Cykelservice Logo"
+              style={{ width: 200, height: 100 }}
+              resizeMode="contain"
+            />
             <View className="gap-1">
               <Text className="text-xs font-semibold uppercase tracking-wider text-primary">
                 Magtenbølle Cykelservice
