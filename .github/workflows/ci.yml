@@ -6,10 +6,10 @@ on:
   push:
     branches: [main]
 
-# Cancel an older run when new commits are pushed to the same branch.
+# Cancel an older PR run when new commits are pushed; never cancel runs on main (they deploy).
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read
@@ -30,3 +30,38 @@ jobs:
       - run: npm ci
 
       - run: npx tsc --noEmit
+
+  # Deploys the web build to EAS Hosting production after a green type check on main.
+  deploy:
+    name: Deploy web (EAS Hosting)
+    needs: typecheck
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # Never cancel a deploy halfway; queue the next one instead.
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false
+    env:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
+      EXPO_PUBLIC_SUPABASE_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Check deploy secrets are set
+        run: |
+          for v in EXPO_TOKEN EXPO_PUBLIC_SUPABASE_URL EXPO_PUBLIC_SUPABASE_KEY; do
+            [ -n "${!v}" ] || { echo "::error::Missing secret $v"; exit 1; }
+          done
+
+      - run: npm ci
+
+      - run: npx expo export -p web
+
+      - run: npx eas-cli@25.3.0 deploy --prod --non-interactive
