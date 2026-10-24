@@ -53,6 +53,7 @@ const baseRepair = (over: Partial<Repair> = {}): Repair => ({
   discount: { type: 'percent', value: 5 },
   totalPrice: 999,
   note: 'n',
+  missingItems: false,
   items: [
     {
       id: 1,
