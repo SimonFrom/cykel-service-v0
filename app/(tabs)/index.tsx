@@ -57,7 +57,6 @@ export default function Screen() {
     <>
       <Stack.Screen options={SCREEN_OPTIONS} />
       <View className="items-center justify-start gap-8 p-4">
-        {/* <Image source={LOGO[colorScheme ?? 'light']} style={IMAGE_STYLE} resizeMode="contain" /> */}
         <View className="gap-2 p-4">
           <Image
             source={mbcykelservice}
