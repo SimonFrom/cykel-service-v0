@@ -4,11 +4,11 @@
     "slug": "cykel-service-v0",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/mbcykelservice.jpg",
+    "icon": "./assets/images/mbcykelservice.png",
     "scheme": "cykel-service-v0",
     "userInterfaceStyle": "automatic",
     "splash": {
-      "image": "./assets/images/mbcykelservice.jpg",
+      "image": "./assets/images/mbcykelservice.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -20,14 +20,14 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/mbcykelservice.jpg",
+        "foregroundImage": "./assets/images/mbcykelservice.png",
         "backgroundColor": "#ffffff"
       }
     },
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/images/mbcykelservice.jpg"
+      "favicon": "./assets/images/mbcykelservice.png"
     },
     "plugins": [
       "expo-router",
