@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/stock components/button';
 import { useRouter } from 'expo-router';
 import { Repair } from '@/types/repair';
 import { useBikeStore } from '@/store/bikeStore';
+import { useCustomerStore } from '@/store/customerStore';
 import { Customer } from '@/types/customer';
 import { Bike } from '@/types/bike';
 import {
@@ -26,10 +27,12 @@ export default function RecentRepairCard({
 }) {
   const router = useRouter();
   const setSelectedBike = useBikeStore((s) => s.setSelectedBike);
+  const setSelectedCustomer = useCustomerStore((s) => s.setSelectedCustomer);
   const canNavigate = !!customer && !!bike;
 
   const handlePress = () => {
     if (!customer || !bike) return;
+    setSelectedCustomer(customer); 
     setSelectedBike(bike);
     router.push({
       pathname: '/customers/[id]/[bikeId]',
