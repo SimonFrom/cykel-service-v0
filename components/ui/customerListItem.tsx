@@ -15,7 +15,7 @@ type CustomerListItemProps = {
   onDelete: (customer: Customer) => void | Promise<void>;
 };
 
-function getInitials(customer: Customer) {
+export function getInitials(customer: Customer) {
   return `${customer.firstName.charAt(0)}${customer.lastName.charAt(0)}`.toUpperCase();
 }
 
@@ -77,7 +77,11 @@ export function CustomerListItem({ customer, isLast, onPress, onDelete }: Custom
           onConfirm={() => onDelete(customer)}
           trigger={
             <Button variant="ghost" size="icon" accessibilityLabel={`Slet ${fullName}`}>
-              <Icon as={Trash2} size={16} className="text-muted-foreground" />
+              <Icon
+                as={Trash2}
+                size={16}
+                className="text-muted-foreground web:group-hover:text-destructive"
+              />
             </Button>
           }
         />

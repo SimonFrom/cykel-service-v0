@@ -2,8 +2,9 @@ import { Text } from '@/components/ui/stock components/text';
 import { Button } from '@/components/ui/stock components/button';
 import { useRouter } from 'expo-router';
 import { Repair } from '@/types/repair';
-import { useBikeStore } from '@/store/bikeStore';
 import { useCustomerStore } from '@/store/customerStore';
+import { useBikeStore } from '@/store/bikeStore';
+import { useRepairStore } from '@/store/repairStore';
 import { Customer } from '@/types/customer';
 import { Bike } from '@/types/bike';
 import {
@@ -15,6 +16,7 @@ import {
 } from '@/components/ui/stock components/card';
 import { Pressable } from 'react-native';
 
+// Opens the customer page with this repair's modal on top.
 // Navigation is disabled until the repair's customer and bike are loaded
 export default function RecentRepairCard({
   repair,
@@ -26,17 +28,19 @@ export default function RecentRepairCard({
   bike?: Bike;
 }) {
   const router = useRouter();
-  const setSelectedBike = useBikeStore((s) => s.setSelectedBike);
   const setSelectedCustomer = useCustomerStore((s) => s.setSelectedCustomer);
+  const setSelectedBike = useBikeStore((s) => s.setSelectedBike);
+  const setSelectedRepair = useRepairStore((s) => s.setSelectedRepair);
   const canNavigate = !!customer && !!bike;
 
   const handlePress = () => {
     if (!customer || !bike) return;
-    setSelectedCustomer(customer); 
+    setSelectedCustomer(customer);
     setSelectedBike(bike);
+    setSelectedRepair(repair);
     router.push({
-      pathname: '/customers/[id]/[bikeId]',
-      params: { id: String(customer.id), bikeId: String(bike.id) },
+      pathname: '/customers/[id]',
+      params: { id: String(customer.id), openRepair: '1' },
     });
   };
 
@@ -61,10 +65,13 @@ export default function RecentRepairCard({
         </Text>
         <CardContent>
           <Text className="text-md font-mono font-semibold">Note: {repair.note}</Text>
-          <Text className="text-md font-mono font-semibold">Pris: {repair.totalPrice.toFixed(2)} kr.</Text>
+          <Text className="text-md font-mono font-semibold">
+            Pris: {repair.totalPrice.toFixed(2)} kr.
+          </Text>
         </CardContent>
-        <CardFooter className="flex-start flex gap-1">
-          <Button onPress={handlePress} disabled={!canNavigate}>
+        {/* Visual only: the card handles the press, a second handler would navigate twice */}
+        <CardFooter className="flex-start flex gap-1" pointerEvents="none">
+          <Button disabled={!canNavigate}>
             <Text>Vis</Text>
           </Button>
         </CardFooter>

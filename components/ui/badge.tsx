@@ -1,4 +1,4 @@
-import { TextClassContext } from '@/components/ui/text';
+import { TextClassContext } from '@/components/ui/stock components/text';
 import { cn } from '@/lib/utils';
 import { Slot } from '@rn-primitives/slot';
 import { cva, type VariantProps } from 'class-variance-authority';

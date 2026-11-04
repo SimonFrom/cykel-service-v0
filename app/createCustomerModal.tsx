@@ -5,18 +5,23 @@ import { Input } from '@/components/ui/stock components/input';
 import { Label } from '@/components/ui/stock components/label';
 import { Button } from '@/components/ui/stock components/button';
 import { Text } from '@/components/ui/stock components/text';
-import { createCustomer } from '@/crud/customers';
+import { createCustomer, updateCustomer } from '@/crud/customers';
 import { Customer } from '@/types/customer';
 import { useCustomerStore } from '@/store/customerStore';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { Icon } from '@/components/ui/stock components/icon';
 import { CircleArrowLeft } from 'lucide-react-native';
 
 type FormData = Omit<Customer, 'id'>;
 
+// `mode=edit` edits the selected customer; otherwise a new customer is created.
 export default function CreateCustomerModal({ onSuccess }: { onSuccess?: () => void }) {
   const [isLoading, setIsLoading] = useState(false);
+  const [saveError, setSaveError] = useState(false);
   const updateCustomerInStore = useCustomerStore((s) => s.updateCustomerInStore);
+  const selectedCustomer = useCustomerStore((s) => s.selectedCustomer);
+  const { mode } = useLocalSearchParams<{ mode?: string }>();
+  const editing = mode === 'edit' ? selectedCustomer : null;
 
   const {
     control,
@@ -25,17 +30,26 @@ export default function CreateCustomerModal({ onSuccess }: { onSuccess?: () => v
     formState: { errors },
   } = useForm<FormData>({
     defaultValues: {
-      firstName: '',
-      lastName: '',
-      email: '',
-      phoneNumber: '',
-      club: '',
+      firstName: editing?.firstName ?? '',
+      lastName: editing?.lastName ?? '',
+      email: editing?.email ?? '',
+      phoneNumber: editing?.phoneNumber ?? '',
+      club: editing?.club ?? '',
     },
   });
 
   const onSubmit = async (data: FormData) => {
     try {
       setIsLoading(true);
+      setSaveError(false);
+      if (editing) {
+        const updated = { ...editing, ...data };
+        await updateCustomer(editing.id, updated);
+        updateCustomerInStore(updated);
+        onSuccess?.();
+        router.back();
+        return;
+      }
       const customer = await createCustomer(data);
       updateCustomerInStore(customer);
       reset();
@@ -46,6 +60,7 @@ export default function CreateCustomerModal({ onSuccess }: { onSuccess?: () => v
       });
     } catch (e) {
       console.error(e);
+      setSaveError(true);
     } finally {
       setIsLoading(false);
     }
@@ -171,8 +186,11 @@ export default function CreateCustomerModal({ onSuccess }: { onSuccess?: () => v
             />
           </View>
 
+          {saveError && <Text style={styles.error}>Kunden kunne ikke gemmes. Prøv igen.</Text>}
           <Button onPress={handleSubmit(onSubmit)} disabled={isLoading}>
-            <Text>{isLoading ? 'Opretter...' : 'Opret kunde'}</Text>
+            <Text>
+              {isLoading ? (editing ? 'Gemmer...' : 'Opretter...') : editing ? 'Gem' : 'Opret kunde'}
+            </Text>
           </Button>
         </ScrollView>
       </View>

@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/stock components/input';
 import { Text } from '@/components/ui/stock components/text';
 import { useCustomerStore } from '@/store/customerStore';
 import { TriggerRef } from '@rn-primitives/select';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   Select,
@@ -31,9 +31,8 @@ type FormData = Bike;
 export function CreateBikeForm({ onSuccess, bike }: { onSuccess?: () => void; bike?: Bike }) {
 
   const customerId = useCustomerStore((s) => s.selectedCustomer?.id)
-  const customer = useCustomerStore((s) => s.selectedCustomer);
-  const bikes = useBikeStore((s) => s.bikes);
-  const setBikesInStore = useBikeStore((s) => s.setBikesInStore);
+  const addBikeToStore = useBikeStore((s) => s.addBikeToStore);
+  const [saveError, setSaveError] = useState(false);
   const updateBikeInStore = useBikeStore((s) => s.updateBikeInStore);
 
   // Select props
@@ -62,34 +61,23 @@ export function CreateBikeForm({ onSuccess, bike }: { onSuccess?: () => void; bi
     },
   });
 
+  // Creates when no bike is given, otherwise updates; both close the modal on success.
   const onSubmit = async (data: FormData) => {
-    console.log('onSubmit called', { customerId, data });
-    if (!customerId) {
-      console.log('early return: no customerId');
-      return;
-    }
+    if (!customerId) return;
     try {
       if (!bike) {
-        data.customerId = customerId;
-        console.log("create")
-        const created = await createBike(data);
-        updateBikeInStore(created);
-        router.replace({
-          pathname: '/customers/[id]/[bikeId]',
-          params: { id: String(customerId), bikeId: String(created.id) },
-        });
+        addBikeToStore(await createBike({ ...data, customerId }));
       } else {
-        console.log("update")
-        await updateBike(data);
-        router.back()
+        updateBikeInStore(await updateBike({ ...data, id: bike.id, customerId: bike.customerId }));
       }
       reset();
       onSuccess?.();
+      router.back();
     } catch (e) {
-      console.error('onSubmit error:', JSON.stringify(e, null, 2));
+      console.error('onSubmit error:', e);
+      setSaveError(true);
     }
   };
-
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -182,6 +170,7 @@ export function CreateBikeForm({ onSuccess, bike }: { onSuccess?: () => void; bi
         />
         {errors.type && <Text style={styles.error}>{errors.type.message}</Text>}
       </View>
+      {saveError && <Text style={styles.error}>Cyklen kunne ikke gemmes. Prøv igen.</Text>}
       <Button style={{ backgroundColor: 'hsl(160 60% 45%)' }} className="ml-auto mr-5" onPress={handleSubmit(onSubmit)}>
         <Text>Gem cykel</Text>
       </Button>

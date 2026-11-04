@@ -80,8 +80,5 @@ export const updateCustomer = async (id: number, customer: Customer) => {
             club: customer.club,
         })
         .eq('id', id);
-    if (error) {
-        console.log(error);
-        return error;
-    }
+    if (error) throw error;
 }

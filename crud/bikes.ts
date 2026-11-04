@@ -1,66 +1,78 @@
-import {supabase} from "@/utils/supabase";
-import {Bike} from "@/types/bike";
-import { Customer } from '@/types/customer';
+import { supabase } from '@/utils/supabase';
+import { Bike } from '@/types/bike';
 
-export const getBikes = async (id:number): Promise<Bike[]> => {
-    const {data, error} = await supabase
-        .from("bikes")
-        .select("*")
-        .eq('customer_id', id)
+type BikeRow = {
+  id: number;
+  customer_id: number;
+  make: string;
+  model: string;
+  colour: string;
+  type: Bike['type'];
+};
 
-    if (error) throw error;
-    return data ?? [];
-}
+const mapBikeRow = (row: BikeRow): Bike => ({
+  id: row.id,
+  customerId: row.customer_id,
+  make: row.make,
+  model: row.model,
+  colour: row.colour,
+  type: row.type,
+});
+
+const toBikeRow = (bike: Bike): Omit<BikeRow, 'id'> => ({
+  customer_id: bike.customerId,
+  make: bike.make,
+  model: bike.model,
+  colour: bike.colour,
+  type: bike.type,
+});
+
+export const getBikes = async (customerId: number): Promise<Bike[]> => {
+  const { data, error } = await supabase
+    .from('bikes')
+    .select('*')
+    .eq('customer_id', customerId)
+    .returns<BikeRow[]>();
+
+  if (error) throw error;
+  return (data ?? []).map(mapBikeRow);
+};
 
 export const getAllBikes = async (): Promise<Bike[]> => {
-    const {data, error} = await supabase
-        .from("bikes")
-        .select("*") 
+  const { data, error } = await supabase.from('bikes').select('*').returns<BikeRow[]>();
 
-    if (error) throw error;
-    return data ?? [];
-}
+  if (error) throw error;
+  return (data ?? []).map(mapBikeRow);
+};
 
+// RLS can silently block a delete (no error, 0 rows), so check that the row was actually removed.
 export const deleteBike = async (id: number) => {
-  const { error } = await supabase.from('bikes').delete().eq('id', id);
-  if (error) console.log(error);
+  const { data, error } = await supabase.from('bikes').delete().eq('id', id).select('id');
+
+  if (error) throw error;
+  if (!data?.length)
+    throw new Error('Databasen afviste sletningen (tjek RLS-regler for sletning).');
 };
 
-export const createBike = async (bike: Bike) => {
-  const { data, error } = await supabase.from('bikes').insert({
-    customer_id: bike.customerId,
-    make: bike.make,
-    model: bike.model,
-    colour: bike.colour,
-    type: bike.type,
-  }).select('*').single();
-
-  if (error) {
-    console.error('createBike error:', JSON.stringify(error, null, 2));
-    throw error;
-  }
-
-  return {
-    id: data.id,
-    customerId: data.customer_id,
-    make: data.make,
-    model: data.model,
-    colour: data.colour,
-    type: data.type,
-  } satisfies Bike;
-};
-
-export const updateBike = async (bike: Bike) => {
-  const { error } = await supabase
+export const createBike = async (bike: Bike): Promise<Bike> => {
+  const { data, error } = await supabase
     .from('bikes')
-    .update({
-      customer_id: bike.customerId,
-      make: bike.make,
-      model: bike.model,
-      colour: bike.colour,
-      type: bike.type,
-  }).eq('id', bike.id);
-  if (error) {
-    console.error('updateBike error:', JSON.stringify(error, null, 2));
-  }
-}
+    .insert(toBikeRow(bike))
+    .select('*')
+    .single<BikeRow>();
+
+  if (error) throw error;
+  return mapBikeRow(data);
+};
+
+export const updateBike = async (bike: Bike): Promise<Bike> => {
+  const { data, error } = await supabase
+    .from('bikes')
+    .update(toBikeRow(bike))
+    .eq('id', bike.id)
+    .select('*')
+    .single<BikeRow>();
+
+  if (error) throw error;
+  return mapBikeRow(data);
+};
