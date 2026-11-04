@@ -14,7 +14,8 @@ import { getCustomers } from '@/crud/customers';
 import { useCallback } from 'react';
 import { Customer } from '@/types/customer';
 import RecentRepairCard from '@/components/ui/recentRepairCard';
-import mbcykelservice from '@/assets/mbcykelservice.jpg';
+import mbcykelservice from '@/assets/mbcykelservice.png';
+
 
 // const LOGO = {
 //   light: require('@/assets/images/react-native-reusables-light.png'),
@@ -28,8 +29,8 @@ const SCREEN_OPTIONS = {
 };
 
 const IMAGE_STYLE: ImageStyle = {
-  height: 76,
-  width: 76,
+  height: 150,
+  width: 150,
 };
 
 export default function Screen() {
@@ -57,14 +58,9 @@ export default function Screen() {
     <>
       <Stack.Screen options={SCREEN_OPTIONS} />
       <View className="items-center justify-start gap-8 p-4">
+        {/* <Image source={LOGO[colorScheme ?? 'light']} style={IMAGE_STYLE} resizeMode="contain" /> */}
+        <Image source={mbcykelservice} style={IMAGE_STYLE} resizeMode="contain" />
         <View className="gap-2 p-4">
-          <Image
-            source={mbcykelservice}
-            alt="Magtenbølle Cykelservice Logo"
-            style={{ width: 200, height: 100, backgroundColor: 'transparent' }}
-            resizeMode="contain"
-
-          />
           <Text className="ios:text-foreground heading font-mono text-primary">
             Magtenbølle Cykelservice
           </Text>
@@ -82,16 +78,16 @@ export default function Screen() {
         <Card className="p-4">
           <Text className="font-mono text-muted-foreground">Omsætning til dato: </Text>
         </Card>
-        <Text className="col-span-3 ml-5 mt-8 font-mono text-primary">Seneste reparationer:</Text>
+        <Text className="col-span-3 mt-8 font-mono text-primary text-center">Seneste reparationer:</Text>
         {repairs.length > 0 && (
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator
-            className="col-span-3"
-            contentContainerClassName="flex-row items-center gap-4 pb-2">
+            className="col-span-3 ml-4 mr-4"
+            contentContainerClassName="flex-row items-center gap-5 pb-2">
             {[...repairs]
               .sort((a, b) => b.id - a.id)
-              .slice(0, 10)
+              .slice(0, 6)
               .map((repair) => (
                 <RecentRepairCard
                   key={repair.id}

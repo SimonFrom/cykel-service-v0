@@ -4,7 +4,7 @@ import { LoginForm } from '@/components/ui/loginForm';
 
 export default function LoginScreen() {
   return (
-    <View className="flex-1 items-centerground p-6">
+    <View className="flex-1 items-centerground p-6 justify-center items-center">
       <Text className="text-2xl font-semibold">Log ind</Text>
       <LoginForm />
     </View>

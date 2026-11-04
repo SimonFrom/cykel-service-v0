@@ -24,7 +24,7 @@ export default function RootLayout() {
       <SafeAreaProvider style={{ flex: 1 }}>
         <Stack>
           <Stack.Protected guard={!!session}>
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="(tabs)" options={{ headerShown: false, }} />
             <Stack.Screen
               name="createCustomerModal"
               options={{

@@ -23,6 +23,7 @@ export default function RootLayout() {
       <Tabs
         screenOptions={{
           tabBarActiveTintColor: 'hsl(160 60% 45%)',
+          //tabBarPosition: 'left',
         }}>
         <Tabs.Screen
           name="index"
