@@ -1,276 +1,321 @@
-import { View, ScrollView, StyleSheet, FlatList } from 'react-native';
-import { useForm, Controller } from 'react-hook-form';
-import { Input } from '@/components/ui/stock components/input';
-import { Label } from '@/components/ui/stock components/label';
+import { BikeCard } from '@/components/ui/bikeCard';
+import { CustomerInfoCard } from '@/components/ui/customerInfoCard';
+import { RepairCard } from '@/components/ui/repairCard';
 import { Button } from '@/components/ui/stock components/button';
-import { Text } from '@/components/ui/stock components/text';
-import { Textarea } from '@/components/ui/stock components/textarea';
-import { useCustomerStore } from '@/store/customerStore';
-import { updateCustomer } from '@/crud/customers';
-import { deleteBike, getBikes } from '@/crud/bikes';
-import { Customer } from '@/types/customer';
-import { router, useFocusEffect } from 'expo-router';
-import { useCallback, useEffect } from 'react';
-import * as React from 'react';
-import { useBikeStore } from '@/store/bikeStore';
-import Animated, { LinearTransition } from 'react-native-reanimated';
-import { Bike, bikeTypes } from '@/types/bike';
-import { DeleteConfirmationDialog } from '@/components/ui/deleteConfirmation';
 import { Icon } from '@/components/ui/stock components/icon';
-import { CircleArrowLeft } from 'lucide-react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Text } from '@/components/ui/stock components/text';
+import { deleteBike } from '@/crud/bikes';
+import { deleteRepair } from '@/crud/repairs';
+import {
+  RepairSortKey,
+  repairSortOptions,
+  sortRepairs,
+  summarizeBikeRepairs,
+} from '@/lib/repairSort';
+import { cn } from '@/lib/utils';
+import { useBikeStore } from '@/store/bikeStore';
+import { useCustomerStore } from '@/store/customerStore';
+import { useRepairStore } from '@/store/repairStore';
+import { Bike } from '@/types/bike';
+import { Repair } from '@/types/repair';
+import { router, Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { ArrowLeft, Plus, Wrench } from 'lucide-react-native';
+import * as React from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ActivityIndicator, Pressable, ScrollView, View } from 'react-native';
 
-type FormData = Customer;
+// Single page for one customer: info, bikes and all repairs. Editing happens in modals.
+// `openRepair=1` opens the repair modal for the repair/bike already selected in the stores.
+export default function CustomerScreen() {
+  const params = useLocalSearchParams<{ id: string; openRepair?: string }>();
+  const customerId = Number(params.id);
 
-export default function CustomerScreen({ onSuccess }: { onSuccess?: () => void }) {
-  const customer = useCustomerStore((s) => s.selectedCustomer);
-  const updateCustomerInStore = useCustomerStore((s) => s.updateCustomerInStore);
-  const setCustomer = useCustomerStore((s) => s.updateCustomerInStore);
+  const selectedCustomer = useCustomerStore((s) => s.selectedCustomer);
+  const customers = useCustomerStore((s) => s.customers);
+  const customersLoading = useCustomerStore((s) => s.isLoading);
+  const fetchCustomers = useCustomerStore((s) => s.fetchCustomers);
+  const setSelectedCustomer = useCustomerStore((s) => s.setSelectedCustomer);
 
   const bikes = useBikeStore((s) => s.bikes);
-  const setBikesInStore = useBikeStore((s) => s.setBikesInStore);
+  const fetchBikes = useBikeStore((s) => s.fetchBikes);
+  const setSelectedBike = useBikeStore((s) => s.setSelectedBike);
   const deleteBikeInStore = useBikeStore((s) => s.deleteBike);
-  const updateBikeInStore = useBikeStore((s) => s.updateBikeInStore);
 
-  const { control, handleSubmit, reset } = useForm<FormData>({
-    defaultValues: {
-      id: customer?.id ?? 0,
-      firstName: customer?.firstName ?? '',
-      lastName: customer?.lastName ?? '',
-      email: customer?.email ?? '',
-      phoneNumber: customer?.phoneNumber ?? '',
-      club: customer?.club ?? '',
-      note: customer?.note ?? '',
-    },
-  });
+  const allRepairs = useRepairStore((s) => s.repairs);
+  const fetchRepairs = useRepairStore((s) => s.fetchRepairs);
+  const setSelectedRepair = useRepairStore((s) => s.setSelectedRepair);
+  const deleteRepairInStore = useRepairStore((s) => s.deleteRepair);
 
-  const fetchBikes = async () => {
-    const bikes = await getBikes(customer?.id ?? 0);
-    setBikesInStore(bikes);
-  };
+  const [sort, setSort] = useState<RepairSortKey>('newest');
+  const [bikeFilter, setBikeFilter] = useState<number | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
+  // Fall back to the customer list so a page reload on web still works
+  const customer =
+    selectedCustomer?.id === customerId
+      ? selectedCustomer
+      : (customers.find((c) => c.id === customerId) ?? null);
+
+  const repairOpened = useRef(false);
   useFocusEffect(
     useCallback(() => {
-      fetchBikes();
-    }, [])
+      if (!useCustomerStore.getState().customers.some((c) => c.id === customerId)) {
+        fetchCustomers();
+      }
+      fetchBikes(customerId);
+      fetchRepairs();
+      // Ref, not setParams: setParams right before push drops the push on web
+      if (params.openRepair && !repairOpened.current) {
+        repairOpened.current = true;
+        router.push('/createRepairModal');
+      }
+    }, [customerId, params.openRepair, fetchCustomers, fetchBikes, fetchRepairs])
   );
 
-  const onSubmit = async (data: FormData) => {
+  // Modals read the customer from the store
+  useEffect(() => {
+    if (customer && selectedCustomer?.id !== customer.id) setSelectedCustomer(customer);
+  }, [customer, selectedCustomer, setSelectedCustomer]);
+
+  const customerBikes = useMemo(
+    () => bikes.filter((b) => b.customerId === customerId),
+    [bikes, customerId]
+  );
+  const customerRepairs = useMemo(
+    () => allRepairs.filter((r) => r.customerId === customerId),
+    [allRepairs, customerId]
+  );
+  const activeFilter = customerBikes.some((b) => b.id === bikeFilter) ? bikeFilter : null;
+  const visibleRepairs = useMemo(
+    () =>
+      sortRepairs(
+        activeFilter === null
+          ? customerRepairs
+          : customerRepairs.filter((r) => r.bikeId === activeFilter),
+        sort
+      ),
+    [customerRepairs, activeFilter, sort]
+  );
+
+  const openRepair = (repair: Repair | null, bike: Bike) => {
+    setSelectedBike(bike);
+    setSelectedRepair(repair);
+    router.push('/createRepairModal');
+  };
+
+  const handleOpenRepair = (repair: Repair) => {
+    const bike = customerBikes.find((b) => b.id === repair.bikeId);
+    if (bike) openRepair(repair, bike);
+  };
+
+  const handleEditBike = (bike: Bike | null) => {
+    setSelectedBike(bike);
+    router.push('/createBikeModal');
+  };
+
+  const handleDeleteBike = async (bike: Bike) => {
     try {
-      await updateCustomer(data.id, data);
-      updateCustomerInStore(data);
-      reset();
-      router.replace({
-        pathname: '/customers/[id]/[bikeId]' as any,
-        params: { id: String(customer?.id), bikeId: String(bikes[0]?.id ?? 0) },
-      });
-      onSuccess?.();
+      setActionError(null);
+      await deleteBike(bike.id);
+      deleteBikeInStore(bike.id);
     } catch (e) {
-      console.error(e);
+      // 23503 = foreign key violation: the bike still has repairs.
+      const isReferenced = (e as { code?: string }).code === '23503';
+      setActionError(
+        isReferenced
+          ? `${bike.make} ${bike.model} har reparationer registreret. Slet reparationerne først.`
+          : `Cyklen kunne ikke slettes: ${(e as Error).message}`
+      );
     }
   };
 
-  const handleDelete = async (id: number) => {
-    await deleteBike(id);
-    deleteBikeInStore(id);
+  const handleDeleteRepair = async (repair: Repair) => {
+    try {
+      setActionError(null);
+      await deleteRepair(repair.id);
+      deleteRepairInStore(repair.id);
+    } catch (e) {
+      setActionError(`Reparationen kunne ikke slettes: ${(e as Error).message}`);
+    }
   };
 
-  const handleShowBike = async (bike: Bike) => {
-    updateBikeInStore(bike);
-    router.push({
-      pathname: '/(tabs)/customers/[id]/[bikeId]' as any,
-      params: { id: String(customer?.id), bikeId: bike.id },
-    });
-  };
+  const goBack = () => router.navigate('/customers');
 
-  if (!customer)
+  if (!customer) {
     return (
-      <View className='items-center mt-auto mb-auto'>
-        <Text className='ios:text-foreground heading font-mono'>Ingen kunde er valgt</Text>
-        <Text className='ios:text-foreground heading font-mono text-primary'>Start venligst forfra</Text>
-        <Button className="primary w-1/6" onPress={() => router.push('/customers')}>Til forsiden</Button>
+      <View className="flex-1 items-center justify-center gap-4 bg-background p-4">
+        {customersLoading ? (
+          <ActivityIndicator />
+        ) : (
+          <>
+            <Text className="font-medium">Kunden blev ikke fundet</Text>
+            <Button variant="outline" onPress={goBack}>
+              <Text>Til kunder</Text>
+            </Button>
+          </>
+        )}
       </View>
     );
+  }
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
-      <View>
-        <Button
-          className={'ml-auto mr-5 mt-5 w-15'}
-          variant={'destructive'}
-          onPress={() => router.push('/customers')}>
-          <Icon as={CircleArrowLeft} className="text-primary-foreground" />
-        </Button>
-      </View>
-
-      <View style={{ flex: 1 }}>
-        <View style={{ flex: 1, gap: 16, padding: 16, flexDirection: 'column', width: '60%' }}>
-          <View className="flex-row gap-4 items-center">
-            <Label nativeID="firstName">Fornavn</Label>
-            <Controller
-              control={control}
-              name="firstName"
-              render={({ field: { onChange, value } }) => (
-                <Input aria-labelledby="firstName" onChangeText={onChange} value={value} />
-              )}
-            />
-          </View>
-
-          <View className="flex-row gap-4 items-center">
-            <Label nativeID="lastName">Efternavn</Label>
-            <Controller
-              control={control}
-              name="lastName"
-              render={({ field: { onChange, value } }) => (
-                <Input aria-labelledby="lastName" onChangeText={onChange} value={value} />
-              )}
-            />
-          </View>
-
-          <View className="flex-row gap-4 items-center">
-            <Label nativeID="phoneNumber">Telefon</Label>
-            <Controller
-              control={control}
-              name="phoneNumber"
-              render={({ field: { onChange, value } }) => (
-                <Input aria-labelledby="phoneNumber" onChangeText={onChange} value={value} />
-              )}
-            />
-          </View>
-
-          <View className="flex-row gap-4 items-center">
-            <Label nativeID="email">Email</Label>
-            <Controller
-              control={control}
-              name="email"
-              render={({ field: { onChange, value } }) => (
-                <Input aria-labelledby="email" onChangeText={onChange} value={value} />
-              )}
-            />
-          </View>
-          {customer.club && (
-            <View className="flex-row gap-4 items-center">
-              <Label nativeID="club">Klub</Label>
-              <Controller
-                control={control}
-                name="club"
-                render={({ field: { onChange, value } }) => (
-                  <Input aria-labelledby="club" onChangeText={onChange} value={value ?? ''} />
-                )}
-              />
-            </View>
-          )}
-          <View className="flex-row gap-4 items-center">
-            <Label nativeID="note">Noter</Label>
-            <Controller
-              control={control}
-              name="note"
-              render={({ field: { onChange, value } }) => (
-                <Textarea aria-labelledby="note" onChangeText={onChange} value={value ?? ''} />
-              )}
-            />
-          </View>
-
-          <Button className="w-3/12" onPress={handleSubmit(onSubmit)}>
-            <Text>Gem</Text>
+    <>
+      <Stack.Screen options={{ title: `${customer.firstName} ${customer.lastName}` }} />
+      <ScrollView className="flex-1 bg-background" contentContainerClassName="p-4 md:p-8">
+        <View className="mx-auto w-full max-w-5xl gap-6">
+          <Button variant="ghost" className="self-start" onPress={goBack}>
+            <Icon as={ArrowLeft} size={16} />
+            <Text>Kunder</Text>
           </Button>
-        </View>
-      </View>
 
-      <View>
-        <Button className="ml-5 mr-5 w-28" onPress={() => router.push('/createBikeModal' as any)}>
-          <Text>Opret cykel</Text>
-        </Button>
-        {/*TODO View for list with height*/}
-        <Animated.FlatList
-          data={bikes}
-          itemLayoutAnimation={LinearTransition}
-          keyExtractor={(item) => item.id.toString()}
-          contentContainerStyle={styles.list}
-          ItemSeparatorComponent={() => <View style={styles.separator} />}
-          scrollEnabled={true}
-          showsHorizontalScrollIndicator={true}
-          renderItem={({ item }) => (
-            <View style={styles.row}>
-              <View style={styles.info}>
-                <Text style={styles.name}>
-                  {item.make} {item.model}
-                </Text>
-                <Text style={styles.email}>
-                  {bikeTypes.find((t) => t.value === item.type)?.label}
-                </Text>
-                <Text style={styles.phone}>{item.colour}</Text>
-              </View>
-              <Button onPress={() => handleShowBike(item)}>
-                <Text>Vis</Text>
-              </Button>
-              <DeleteConfirmationDialog
-                title={'Er du sikker?'}
-                buttonTitle={'Slet'}
-                content={`Vil du virkelig slette ${item.make} ${item.model}?`}
-                onConfirm={() => handleDelete(item.id)}
-              />
+          <CustomerInfoCard
+            customer={customer}
+            onEdit={() =>
+              router.push({ pathname: '/createCustomerModal', params: { mode: 'edit' } })
+            }
+          />
+
+          {actionError ? (
+            <View className="rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3">
+              <Text className="text-sm text-destructive">{actionError}</Text>
             </View>
-          )}
-        />
-      </View>
-    </SafeAreaView>
+          ) : null}
+
+          <View className="gap-3">
+            <SectionHeader title="Cykler" count={customerBikes.length}>
+              <Button size="sm" onPress={() => handleEditBike(null)}>
+                <Icon as={Plus} size={14} className="text-primary-foreground" />
+                <Text>Tilføj cykel</Text>
+              </Button>
+            </SectionHeader>
+            {customerBikes.length === 0 ? (
+              <EmptyCard text="Kunden har ingen cykler endnu." />
+            ) : (
+              <View className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
+                {customerBikes.map((bike) => (
+                  <BikeCard
+                    key={bike.id}
+                    bike={bike}
+                    summary={summarizeBikeRepairs(customerRepairs, bike.id)}
+                    onCreateRepair={(b) => openRepair(null, b)}
+                    onEdit={handleEditBike}
+                    onDelete={handleDeleteBike}
+                  />
+                ))}
+              </View>
+            )}
+          </View>
+
+          <View className="gap-3">
+            <SectionHeader title="Reparationer" count={customerRepairs.length} />
+            <View className="flex-row flex-wrap items-center justify-between gap-3">
+              <View className="flex-row flex-wrap gap-2">
+                {customerBikes.length > 1 ? (
+                  <>
+                    <Chip
+                      label="Alle cykler"
+                      active={activeFilter === null}
+                      onPress={() => setBikeFilter(null)}
+                    />
+                    {customerBikes.map((bike) => (
+                      <Chip
+                        key={bike.id}
+                        label={`${bike.make} ${bike.model}`}
+                        active={activeFilter === bike.id}
+                        onPress={() => setBikeFilter(bike.id)}
+                      />
+                    ))}
+                  </>
+                ) : null}
+              </View>
+              <View className="flex-row flex-wrap items-center gap-2">
+                <Text variant="muted">Sortér:</Text>
+                {repairSortOptions.map((option) => (
+                  <Chip
+                    key={option.value}
+                    label={option.label}
+                    active={sort === option.value}
+                    onPress={() => setSort(option.value)}
+                  />
+                ))}
+              </View>
+            </View>
+
+            {visibleRepairs.length === 0 ? (
+              <EmptyCard
+                text={
+                  customerBikes.length === 0
+                    ? 'Tilføj en cykel for at oprette en reparation.'
+                    : 'Ingen reparationer endnu. Opret en fra en cykel ovenfor.'
+                }
+              />
+            ) : (
+              <View className="overflow-hidden rounded-xl border border-border bg-card shadow-sm shadow-black/5">
+                {visibleRepairs.map((repair, index) => (
+                  <RepairCard
+                    key={repair.id}
+                    repair={repair}
+                    bike={customerBikes.find((b) => b.id === repair.bikeId)}
+                    isLast={index === visibleRepairs.length - 1}
+                    onPress={handleOpenRepair}
+                    onDelete={handleDeleteRepair}
+                  />
+                ))}
+              </View>
+            )}
+          </View>
+        </View>
+      </ScrollView>
+    </>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    padding: 24,
-    gap: 16,
-  },
-  field: {
-    gap: 4,
-    width: '60%',
-  },
-  error: {
-    fontSize: 12,
-    color: '#E24B4A',
-  },
-  list: {
-    padding: 16,
-  },
-  separator: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: '#E5E5E5',
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-    gap: 12,
-  },
-  avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#EEEDFE',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarText: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: 'orange',
-  },
-  info: {
-    flex: 1,
-  },
-  name: {
-    fontSize: 15,
-    fontWeight: '500',
-  },
-  email: {
-    fontSize: 13,
-    color: '#888',
-    marginTop: 1,
-  },
-  phone: {
-    fontSize: 13,
-    color: '#888',
-  },
-});
+function SectionHeader({
+  title,
+  count,
+  children,
+}: {
+  title: string;
+  count: number;
+  children?: React.ReactNode;
+}) {
+  return (
+    <View className="flex-row items-center justify-between gap-4">
+      <View className="flex-row items-baseline gap-2">
+        <Text className="text-xl font-semibold">{title}</Text>
+        <Text variant="muted">{count}</Text>
+      </View>
+      {children}
+    </View>
+  );
+}
+
+function Chip({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityState={{ selected: active }}
+      className={cn(
+        'rounded-full border px-3 py-1 web:transition-colors',
+        active ? 'border-primary bg-primary' : 'border-border bg-card web:hover:bg-muted'
+      )}>
+      <Text
+        className={cn(
+          'text-xs font-medium',
+          active ? 'text-primary-foreground' : 'text-foreground'
+        )}>
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
+function EmptyCard({ text }: { text: string }) {
+  return (
+    <View className="items-center gap-2 rounded-xl border border-dashed border-border px-4 py-10">
+      <Icon as={Wrench} size={18} className="text-muted-foreground" />
+      <Text variant="muted">{text}</Text>
+    </View>
+  );
+}

@@ -1,7 +1,6 @@
 import { create } from 'zustand';
-import { Bike } from '@/types/bike'
+import { Bike } from '@/types/bike';
 import { getAllBikes, getBikes } from '@/crud/bikes';
-
 
 type BikeStore = {
   bikes: Bike[];
@@ -10,10 +9,12 @@ type BikeStore = {
   totalNumberOfBikes: number;
   setBikesInStore: (bikes: Bike[]) => void;
   selectedBike: Bike | null;
-  setSelectedBike: (selectedBike: Bike) => void;
+  setSelectedBike: (selectedBike: Bike | null) => void;
+  addBikeToStore: (bike: Bike) => void;
   updateBikeInStore: (bike: Bike) => void;
   deleteBike: (id: number) => void;
   fetchAllBikes: () => Promise<void>;
+  fetchBikes: (customerId: number) => Promise<void>;
 };
 
 export const useBikeStore = create<BikeStore>((set) => ({
@@ -24,7 +25,7 @@ export const useBikeStore = create<BikeStore>((set) => ({
 
   fetchAllBikes: async () => {
     set({ isLoading: true, error: null });
-    try { 
+    try {
       const data = await getAllBikes();
       set({ totalNumberOfBikes: data.length, bikes: data });
     } catch (error) {
@@ -33,14 +34,25 @@ export const useBikeStore = create<BikeStore>((set) => ({
       set({ isLoading: false });
     }
   },
-  setBikesInStore: (bikes) => set({bikes}),
+  fetchBikes: async (customerId) => {
+    set({ isLoading: true, error: null });
+    try {
+      set({ bikes: await getBikes(customerId), isLoading: false });
+    } catch (e) {
+      set({ error: (e as Error).message, isLoading: false });
+    }
+  },
+  setBikesInStore: (bikes) => set({ bikes }),
   selectedBike: null,
-  setSelectedBike: (bike) => set({selectedBike: bike}),
-  updateBikeInStore: (updated) => set((state) => ({
-    selectedBike: updated,
-    bikes: state.bikes.map((b) => b.id === updated.id ? updated : b)
-  })),
-  deleteBike: (id) => set((state) => ({
-    bikes: state.bikes.filter((b) => b.id.toString() !== id.toString()),
-  }))
-}))
+  setSelectedBike: (bike) => set({ selectedBike: bike }),
+  addBikeToStore: (bike) => set((state) => ({ selectedBike: bike, bikes: [...state.bikes, bike] })),
+  updateBikeInStore: (updated) =>
+    set((state) => ({
+      selectedBike: updated,
+      bikes: state.bikes.map((b) => (b.id === updated.id ? updated : b)),
+    })),
+  deleteBike: (id) =>
+    set((state) => ({
+      bikes: state.bikes.filter((b) => b.id !== id),
+    })),
+}));

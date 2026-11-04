@@ -30,7 +30,7 @@ export default function RootLayout() {
               options={{
                 presentation: 'transparentModal',
                 animation: 'fade_from_bottom',
-                title: 'Opret kunde',
+                title: 'Kunde',
               }}
             />
             <Stack.Screen
@@ -38,7 +38,7 @@ export default function RootLayout() {
               options={{
                 presentation: 'transparentModal',
                 animation: 'fade',
-                title: 'Opret Cykel',
+                title: 'Cykel',
               }}
             />
             <Stack.Screen

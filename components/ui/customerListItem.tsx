@@ -15,7 +15,7 @@ type CustomerListItemProps = {
   onDelete: (customer: Customer) => void | Promise<void>;
 };
 
-function getInitials(customer: Customer) {
+export function getInitials(customer: Customer) {
   return `${customer.firstName.charAt(0)}${customer.lastName.charAt(0)}`.toUpperCase();
 }
 
