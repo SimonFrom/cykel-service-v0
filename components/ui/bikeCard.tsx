@@ -47,7 +47,11 @@ export function BikeCard({ bike, summary, onCreateRepair, onEdit, onDelete }: Bi
           onConfirm={() => onDelete(bike)}
           trigger={
             <Button variant="ghost" size="icon" accessibilityLabel={`Slet ${name}`}>
-              <Icon as={Trash2} size={16} className="text-muted-foreground" />
+              <Icon
+                as={Trash2}
+                size={16}
+                className="text-muted-foreground web:group-hover:text-destructive"
+              />
             </Button>
           }
         />

@@ -65,7 +65,11 @@ export function RepairCard({ repair, bike, isLast, onPress, onDelete }: RepairCa
           onConfirm={() => onDelete(repair)}
           trigger={
             <Button variant="ghost" size="icon" accessibilityLabel={`Slet reparation ${repair.id}`}>
-              <Icon as={Trash2} size={16} className="text-muted-foreground" />
+              <Icon
+                as={Trash2}
+                size={16}
+                className="text-muted-foreground web:group-hover:text-destructive"
+              />
             </Button>
           }
         />

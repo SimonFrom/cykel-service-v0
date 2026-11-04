@@ -21,7 +21,7 @@ import { Repair } from '@/types/repair';
 import { router, Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { ArrowLeft, Plus, Wrench } from 'lucide-react-native';
 import * as React from 'react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, View } from 'react-native';
 
 // Single page for one customer: info, bikes and all repairs. Editing happens in modals.
@@ -72,10 +72,15 @@ export default function CustomerScreen() {
     }, [customerId, params.openRepair, fetchCustomers, fetchBikes, fetchRepairs])
   );
 
-  // Modals read the customer from the store
-  useEffect(() => {
-    if (customer && selectedCustomer?.id !== customer.id) setSelectedCustomer(customer);
-  }, [customer, selectedCustomer, setSelectedCustomer]);
+  // Modals read the customer from the store. Only the focused page syncs it: two mounted
+  // customer pages syncing on every render overwrite each other in an endless loop.
+  useFocusEffect(
+    useCallback(() => {
+      if (customer && useCustomerStore.getState().selectedCustomer?.id !== customer.id) {
+        setSelectedCustomer(customer);
+      }
+    }, [customer, setSelectedCustomer])
+  );
 
   const customerBikes = useMemo(
     () => bikes.filter((b) => b.customerId === customerId),
