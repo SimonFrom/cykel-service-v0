@@ -62,17 +62,28 @@ export function CreateBikeForm({ onSuccess, bike }: { onSuccess?: () => void; bi
   });
 
   // Creates when no bike is given, otherwise updates; both close the modal on success.
+  // A new bike is then shown on the customer page via its bike filter (#17).
   const onSubmit = async (data: FormData) => {
     if (!customerId) return;
     try {
+      let createdBikeId: number | undefined;
       if (!bike) {
-        addBikeToStore(await createBike({ ...data, customerId }));
+        const created = await createBike({ ...data, customerId });
+        addBikeToStore(created);
+        createdBikeId = created.id;
       } else {
         updateBikeInStore(await updateBike({ ...data, id: bike.id, customerId: bike.customerId }));
       }
       reset();
       onSuccess?.();
-      router.back();
+      if (createdBikeId === undefined) {
+        router.back();
+        return;
+      }
+      router.dismissTo({
+        pathname: '/customers/[id]',
+        params: { id: String(customerId), bikeId: String(createdBikeId) },
+      });
     } catch (e) {
       console.error('onSubmit error:', e);
       setSaveError(true);

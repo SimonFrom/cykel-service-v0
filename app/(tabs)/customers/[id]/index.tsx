@@ -21,13 +21,14 @@ import { Repair } from '@/types/repair';
 import { router, Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { ArrowLeft, Plus, Wrench } from 'lucide-react-native';
 import * as React from 'react';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, View } from 'react-native';
 
 // Single page for one customer: info, bikes and all repairs. Editing happens in modals.
 // `openRepair=1` opens the repair modal for the repair/bike already selected in the stores.
+// `bikeId` filters the repair list to that bike (set after creating a bike or repair, #17).
 export default function CustomerScreen() {
-  const params = useLocalSearchParams<{ id: string; openRepair?: string }>();
+  const params = useLocalSearchParams<{ id: string; openRepair?: string; bikeId?: string }>();
   const customerId = Number(params.id);
 
   const selectedCustomer = useCustomerStore((s) => s.selectedCustomer);
@@ -49,6 +50,13 @@ export default function CustomerScreen() {
   const [sort, setSort] = useState<RepairSortKey>('newest');
   const [bikeFilter, setBikeFilter] = useState<number | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+
+  // Apply once, then clear it so the same bike can be shown again after the filter is changed
+  useEffect(() => {
+    if (!params.bikeId) return;
+    setBikeFilter(Number(params.bikeId));
+    router.setParams({ bikeId: undefined });
+  }, [params.bikeId]);
 
   // Fall back to the customer list so a page reload on web still works
   const customer =
