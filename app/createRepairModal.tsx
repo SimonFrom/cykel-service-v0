@@ -101,6 +101,7 @@ export default function CreateRepairForm({
   }, [focusSubmit, isSaving]);
 
   // Closes the modal only on success. On failure the form keeps all values (SR-11, SR-12).
+  // A new repair is then shown on the customer page, filtered to its bike (#17).
   const onSubmit = async (data: Repair) => {
     console.log('Submitting repair data:', data);
     if (!customer?.id || !bike?.id) {
@@ -128,7 +129,14 @@ export default function CreateRepairForm({
     setIsSaving(false);
     reset();
     onSuccess?.();
-    router.back();
+    if (repair) {
+      router.back();
+      return;
+    }
+    router.dismissTo({
+      pathname: '/customers/[id]',
+      params: { id: String(customer.id), bikeId: String(bike.id) },
+    });
   };
 
   const handleBack = () => {
