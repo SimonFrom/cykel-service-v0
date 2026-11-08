@@ -14,6 +14,7 @@ type DateSelectProps = {
   onValueChange: (date: Date | undefined) => void;
   placeholder?: string;
   daysAhead?: number;
+  daysBack?: number;
   startDate?: Date;
   className?: string;
 };
@@ -45,17 +46,32 @@ function dayKey(d: Date): string {
   return startOfDay(d).toISOString().slice(0, 10);
 }
 
-function buildDateOptions(start: Date, days: number) {
-  const base = startOfDay(start);
-  const options: { key: string; date: Date; label: string }[] = [];
+type DateOption = { key: string; date: Date; label: string };
 
-  for (let i = 0; i < days; i++) {
+function toOption(d: Date): DateOption {
+  const date = startOfDay(d);
+  return { key: dayKey(date), date, label: labelFormatter.format(date) };
+}
+
+// Options from `daysBack` days before `anchor` to `daysAhead` days after; `include` is added if outside.
+export function buildDateOptions(
+  anchor: Date,
+  daysBack: number,
+  daysAhead: number,
+  include?: Date
+): DateOption[] {
+  const base = startOfDay(anchor);
+  const options: DateOption[] = [];
+
+  for (let i = -daysBack; i < daysAhead; i++) {
     const date = new Date(base);
     date.setDate(base.getDate() + i);
+    options.push(toOption(date));
+  }
 
-    const label = labelFormatter.format(date);
-
-    options.push({ key: dayKey(date), date, label });
+  if (include && !options.some((o) => o.key === dayKey(include))) {
+    options.push(toOption(include));
+    options.sort((a, b) => a.date.getTime() - b.date.getTime());
   }
   return options;
 }
@@ -65,18 +81,14 @@ export function DateSelect({
   onValueChange,
   placeholder = 'Vælg en dato',
   daysAhead = 30,
+  daysBack = 30,
   startDate,
   className,
 }: DateSelectProps) {
-  const effectiveStartDate = React.useMemo(() => {
-    if (startDate) return startDate;
-    if (value) return startOfDay(value);
-    return startOfDay(new Date());
-  }, [startDate, value]);
-
+  const valueKey = value ? dayKey(value) : undefined;
   const options = React.useMemo(
-    () => buildDateOptions(effectiveStartDate, daysAhead),
-    [effectiveStartDate, daysAhead]
+    () => buildDateOptions(startDate ?? new Date(), daysBack, daysAhead, value),
+    [startDate, daysBack, daysAhead, valueKey]
   );
 
   const selectedOption = React.useMemo<Option | undefined>(() => {
