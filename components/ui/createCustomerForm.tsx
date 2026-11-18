@@ -24,6 +24,10 @@ export function CreateCustomerForm({ onSuccess }: { onSuccess?: () => void }) {
     defaultValues: {
       firstName: '',
       lastName: '',
+      streetName: '',
+      streetNumber: '',
+      postalCode: '',
+      city: '',
       email: '',
       phoneNumber: '',
       club: '',

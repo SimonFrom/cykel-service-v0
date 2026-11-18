@@ -106,6 +106,7 @@ Rules:
 - Always make sure the local branch is up to date with remote before adding code; ask before changes are overwritten.
 - Never git add, commit or push without explicit authorisation. Permission given once in a conversation does not extend to anything else.
 - Create pull requests only via `/create-pr`, and only when asked. PRs target `main`.
+- Never add a "🤖 Generated with Claude Code" line (or similar Claude attribution) to PR descriptions.
 - Before adding a new file/function, check whether an existing one already covers it or should be extended.
 - Ask before: adding packages, changing the Supabase schema, changing auth/RLS, or changing this file.
 - Keep explanations short and concrete.
