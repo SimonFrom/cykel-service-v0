@@ -4,6 +4,10 @@ export type Customer = {
     id: number
     firstName: string
     lastName: string
+    streetName: string
+    streetNumber: string
+    postalCode: string
+    city: string
     email: string
     phoneNumber: string
     club?: string
