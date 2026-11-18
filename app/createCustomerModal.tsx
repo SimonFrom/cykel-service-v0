@@ -32,6 +32,10 @@ export default function CreateCustomerModal({ onSuccess }: { onSuccess?: () => v
     defaultValues: {
       firstName: editing?.firstName ?? '',
       lastName: editing?.lastName ?? '',
+      streetName: editing?.streetName ?? '',
+      streetNumber: editing?.streetNumber ?? '',
+      postalCode: editing?.postalCode ?? '',
+      city: editing?.city ?? '',
       email: editing?.email ?? '',
       phoneNumber: editing?.phoneNumber ?? '',
       club: editing?.club ?? '',
@@ -118,6 +122,83 @@ export default function CreateCustomerModal({ onSuccess }: { onSuccess?: () => v
             {errors.lastName && <Text style={styles.error}>{errors.lastName.message}</Text>}
           </View>
 
+          {/* Streetname */}
+          <View style={styles.field}>
+            <Label nativeID="streetName">Gadenavn</Label>
+            <Controller
+              control={control}
+              name="streetName"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <Input
+                  id="streetName"
+                  onBlur={onBlur}
+                  onChangeText={onChange}
+                  value={value}
+                  aria-labelledby="streetName"
+                />
+              )}
+            />
+            {errors.streetName && <Text style={styles.error}>{errors.streetName.message}</Text>}
+          </View>
+
+          {/* streetNumber */}
+          <View style={styles.field}>
+            <Label nativeID="streetNumber">Hus nr</Label>
+            <Controller
+              control={control}
+              name="streetNumber"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <Input
+                  id="streetNumber"
+                  onBlur={onBlur}
+                  onChangeText={onChange}
+                  value={value}
+                  aria-labelledby="streetNumber"
+                />
+              )}
+            />
+            {errors.streetNumber && <Text style={styles.error}>{errors.streetNumber.message}</Text>}
+          </View>
+
+          {/* Postal Code */}
+          <View style={styles.field}>
+            <Label nativeID="postalCode">Postnummer</Label>
+            <Controller
+              control={control}
+              name="postalCode"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <Input
+                  id="postalCode"
+                  keyboardType="numeric"
+                  onBlur={onBlur}
+                  onChangeText={onChange}
+                  value={value}
+                  aria-labelledby="postalCode"
+                />
+              )}
+            />
+            {errors.postalCode && <Text style={styles.error}>{errors.postalCode.message}</Text>}
+          </View>
+
+          {/* City */}
+          <View style={styles.field}>
+            <Label nativeID="city">By</Label>
+            <Controller
+              control={control}
+              name="city"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <Input
+                  id="city"
+                  onBlur={onBlur}
+                  onChangeText={onChange}
+                  value={value}
+                  aria-labelledby="city"
+                />
+              )}
+            />
+            {errors.city && <Text style={styles.error}>{errors.city.message}</Text>}
+          </View>
+
           {/* Email */}
           <View style={styles.field}>
             <Label nativeID="email">Email</Label>
@@ -189,7 +270,13 @@ export default function CreateCustomerModal({ onSuccess }: { onSuccess?: () => v
           {saveError && <Text style={styles.error}>Kunden kunne ikke gemmes. Prøv igen.</Text>}
           <Button onPress={handleSubmit(onSubmit)} disabled={isLoading}>
             <Text>
-              {isLoading ? (editing ? 'Gemmer...' : 'Opretter...') : editing ? 'Gem' : 'Opret kunde'}
+              {isLoading
+                ? editing
+                  ? 'Gemmer...'
+                  : 'Opretter...'
+                : editing
+                  ? 'Gem'
+                  : 'Opret kunde'}
             </Text>
           </Button>
         </ScrollView>
